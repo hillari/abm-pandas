@@ -1,5 +1,16 @@
+
+### Pycharm ###
 .idea/
-data/
-notebooks/density_testing.ipynb
-notebooks/failures.ipynb
 models/testing.py
+
+### JupyterNotebook ###
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+notebooks/failures.ipynb
+
+# Remove previous ipynb_checkpoints
+#   git rm -r .ipynb_checkpoints/
+
+
+# Data files
+data/
