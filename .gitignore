@@ -1,7 +1,7 @@
 
 ### Pycharm ###
 .idea/
-models/testing.py
+scripts/testing.py
 
 ### JupyterNotebook ###
 .ipynb_checkpoints
