@@ -11,11 +11,11 @@ import matplotlib.pyplot as plt
 # Repast may require altering some of this code.
 #
 # TODO
-#  - add plotting code
+#  -
 #  -
 
-param_file = "../data/host-density/new-model-agg/testparams"
-csv_file = "../data/host-density/new-model-agg/testdoc"
+param_file = "/home/hdenny2/plotting-code/data/host-density/new-model-agg/params-Aug1"
+csv_file = "/home/hdenny2/plotting-code/data/host-density/new-model-agg/host-density-new.2020.Aug.01.22_57_29"
 
 
 def build_dictionaries(paramfile, csvfile):
@@ -68,5 +68,17 @@ def build_dataframe(ixodesdict, paramdict):
     return df_agg_final
 
 
+def plot_df(finaldf):
+    # matplotlib.use('Qt5Agg')
+    plt.ylabel("Cumulative Ixodes")
+    plt.xlabel("Large Host Density")
+    plt.title("Aggregated Host Density")
+    plt.plot(finaldf['host_density'], finaldf['agg_ixodes'], marker='o')
+    plt.show(block=True)
+
+    plt.savefig("/home/hdenny2/plotting-code/data/host-density/plots/density-agg-prob1-hab05.png")
+
+
 ixodes_dict, param_dict = build_dictionaries(param_file, csv_file)
-build_dataframe(ixodes_dict, param_dict)
+final_df = build_dataframe(ixodes_dict, param_dict)
+plot_df(final_df)
