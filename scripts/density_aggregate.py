@@ -11,14 +11,14 @@ import matplotlib.pyplot as plt
 # Repast may require altering some of this code.
 #
 # TODO
-#  - optimise and add args
-#  - ?create helper file/move functions
+#  - add plotting code
+#  -
 
-paramfile = ""
-csv_file = "/home/hill/PyCharmProjects/tickABM/data/host-density/new-model-agg/density-agg-newest.2020.Jul.31"
+param_file = "../data/host-density/new-model-agg/testparams"
+csv_file = "../data/host-density/new-model-agg/testdoc"
 
 
-def build_habitat_dict(paramfile, csvfile):
+def build_dictionaries(paramfile, csvfile):
     # Create a dictionary that maps the run# to host_density { run#: host_density }
     paramd = {}
     with open(paramfile, 'r') as file:
@@ -35,7 +35,8 @@ def build_habitat_dict(paramfile, csvfile):
 
     # Now make a dictionary that maps the run# tot total ixodes { run#: cumulative_ixodes }
     ixode_count_dict = {}
-    df = pd.read_csv(csvfile, error_bad_lines=False)
+    colnames = ['run', 'tick', 'lifestate', 'name']
+    df = pd.read_csv(csvfile, names=colnames, header=None, error_bad_lines=False)
     for run in df.groupby('run'):
         current_df = run[1]
         ixode_count_dict[run[0]] = len(current_df['name'].unique())
@@ -43,14 +44,14 @@ def build_habitat_dict(paramfile, csvfile):
 
 
 # We will need: ixode_count_dict, paramd,
-def build_df(ixodes_dict, param_dict):
+def build_dataframe(ixodesdict, paramdict):
     # Creating a data frame from the cumulative_ixodes dict
-    df_final = pd.DataFrame(ixodes_dict.items(), columns=['run', 'total_ixodes'])
+    df_final = pd.DataFrame(ixodesdict.items(), columns=['run', 'total_ixodes'])
     df_final['host_density'] = 0
 
     # Iterate through param dictionary and add the host density value to the associated run
-    for key, value in param_dict.items():
-        for i in range(len(param_dict)):
+    for key, value in paramdict.items():
+        for i in range(len(paramdict)):
             df_final.loc[df_final['run'] == key, 'host_density'] = value
 
     # Now we have a df with | 'run' | 'total_ixode' | 'host_density' |
@@ -63,7 +64,9 @@ def build_df(ixodes_dict, param_dict):
 
     # Create a dataframe from the agg_ixodes_dict which we will use to plot
     df_agg_final = pd.DataFrame(agg_ixodes_dict.items(), columns=['host_density', 'agg_ixodes'])
-
+    print(df_agg_final.head())
     return df_agg_final
 
 
+ixodes_dict, param_dict = build_dictionaries(param_file, csv_file)
+build_dataframe(ixodes_dict, param_dict)
