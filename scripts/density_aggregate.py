@@ -1,6 +1,8 @@
 import pandas as pd
 import matplotlib
+matplotlib.use('Agg') # to run the script on remote server, otherwise it will try to use xwindows backend
 import matplotlib.pyplot as plt
+import argparse
 
 # This script is intended to create a plot for Density vs. Total Ixodes to visualize the impact of host density
 # on Ixodes survival rates. Host density, habitat suitability, and starting lifestate are held constant. For example,
@@ -11,11 +13,19 @@ import matplotlib.pyplot as plt
 # Repast may require altering some of this code.
 #
 # TODO
-#  -
-#  -
+#  - argparse
+#       - make plot name an argument
 
-param_file = "/home/hdenny2/plotting-code/data/host-density/new-model-agg/params-Aug1"
-csv_file = "/home/hdenny2/plotting-code/data/host-density/new-model-agg/host-density-new.2020.Aug.01.22_57_29"
+parser = argparse.ArgumentParser()
+parser.add_argument('param_file')
+parser.add_argument('csv_file')
+parser.add_argument('-popup', action='store_true')
+args = parser.parse_args()
+
+# param_file = "/home/hdenny2/plotting-code/data/host-density/new-model-agg/params-Aug1"
+# csv_file = "/home/hdenny2/plotting-code/data/host-density/new-model-agg/host-density-new.2020.Aug.01.22_57_29"
+param_file = "/home/hdenny2/plotting-code/data/host-density/new-model-agg/" + args.param_file
+csv_file = "/home/hdenny2/plotting-code/data/host-density/new-model-agg/" + args.csv_file
 
 
 def build_dictionaries(paramfile, csvfile):
@@ -29,9 +39,9 @@ def build_dictionaries(paramfile, csvfile):
                 paramd[int(result[0])].append(float(result[4]))
             except KeyError:
                 paramd[int(result[0])] = float(result[4])  # { run#: host_density }
-                # Remove after testing
-                for k, v in paramd.items():
-                    print(k, v)
+    # Remove after testing
+    for k, v in paramd.items():
+        print(k, v)
 
     # Now make a dictionary that maps the run# tot total ixodes { run#: cumulative_ixodes }
     ixode_count_dict = {}
@@ -40,6 +50,11 @@ def build_dictionaries(paramfile, csvfile):
     for run in df.groupby('run'):
         current_df = run[1]
         ixode_count_dict[run[0]] = len(current_df['name'].unique())
+    # Remove after testing
+    print("IXODES COUNT DICT:\n")
+    for k, v in ixode_count_dict.items():
+        print(k, v)
+
     return paramd, ixode_count_dict
 
 
@@ -59,7 +74,6 @@ def build_dataframe(ixodesdict, paramdict):
     agg_ixodes_dict = {}
     for density in df_final.groupby('host_density'):
         tmp_df = density[1]  # density is a tuple, so density[1] is the df we want
-        print(density[0])
         agg_ixodes_dict[density[0]] = tmp_df['total_ixodes'].agg('mean')
 
     # Create a dataframe from the agg_ixodes_dict which we will use to plot
@@ -74,11 +88,14 @@ def plot_df(finaldf):
     plt.xlabel("Large Host Density")
     plt.title("Aggregated Host Density")
     plt.plot(finaldf['host_density'], finaldf['agg_ixodes'], marker='o')
-    plt.show(block=True)
 
-    plt.savefig("/home/hdenny2/plotting-code/data/host-density/plots/density-agg-prob1-hab05.png")
+# Either show the plot as a popup or save it to a specified directory
+    if args.popup:
+        plt.show(block=True)
+    else:
+        plt.savefig("/home/hdenny2/plotting-code/data/host-density/plots/density-agg-prob1-hab09.png")
 
 
-ixodes_dict, param_dict = build_dictionaries(param_file, csv_file)
+param_dict, ixodes_dict = build_dictionaries(param_file, csv_file)
 final_df = build_dataframe(ixodes_dict, param_dict)
 plot_df(final_df)
