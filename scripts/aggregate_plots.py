@@ -15,9 +15,12 @@ from datetime import datetime
 # The -root option allows directory specification. This is mostly for personal use, as there are still hard-coded
 # restrictions on directory structure. eg directly under the specified root directory, there MUST be a directory
 # called 'host' to store host_density plots, and a directory called 'habitat' to store habitat_suitability plots
+# Note that a specified root directory must include the trailing "/"
 
+# TODO better plot labeling
 
-# TODO add argument for habitat or density plot
+# --- Argparse ---
+
 parser = argparse.ArgumentParser()
 parser.add_argument('param_file')
 parser.add_argument('csv_file')
@@ -35,19 +38,13 @@ else:
 param_file = root_dir + args.plot + "/" + args.param_file
 csv_file = root_dir + args.plot + "/" + args.csv_file
 
-print(param_file)
-print(csv_file)
-
 # FOR LOCAL:
 # param_file = "/media/hill/DATA-LINUX/abm-data/" + args.plot + "/" + args.param_file
 # csv_file = "/media/hill/DATA-LINUX/abm-data/" + args.plot + "/" + args.csv_file
 
-# TODO clean up plot labeling (add types?)
-
 
 def get_args():
-
-    # FIXME handling of incorrect plot type
+    # This function uses argparse to tell the code which plots we are creating
 
     if args.plot == 'habitat':
         dict_index = 8
@@ -67,9 +64,10 @@ def build_dictionaries(paramfile, csvfile):
     Parses param file to create a dictionary that maps the run# to <plot_type> like so - { run#: <plot_type> }
     :param paramfile: the parameter file to be parsed
     :param csvfile: the repast file sink
+    :return paramd, ixodes_count_dict: parameter dictionary and cumulative ixodes dictionary
     """
     dict_index, _, _, _ = get_args()
-    print("Creating dictionaries..." )
+    print("Creating dictionaries...")
     paramd = {}
     with open(paramfile, 'r') as file:
         for line in file:
@@ -84,23 +82,21 @@ def build_dictionaries(paramfile, csvfile):
     # for k, v in paramd.items():
     #     print(k, v)
 
-    # Now make a dictionary that maps the run# tot total ixodes { run#: cumulative_ixodes }
-    ixode_count_dict = {}
+    # Make a dictionary that maps the run# to total ixodes { run#: cumulative_ixodes }
+    ixodes_count_dict = {}
     colnames = ['run', 'tick', 'lifestate', 'name']
     df = pd.read_csv(csvfile, names=colnames, header=None, error_bad_lines=False)
     for run in df.groupby('run'):
         current_df = run[1]
-        ixode_count_dict[run[0]] = len(current_df['name'].unique())
+        ixodes_count_dict[run[0]] = len(current_df['name'].unique())
     print("DONE creating dictionaries.")
-
     # print("ixodes count dict:\n")
-    # for k, v in ixode_count_dict.items():
+    # for k, v in ixodes_count_dict.items():
     #     print(k, v)
+    return paramd, ixodes_count_dict
 
-    return paramd, ixode_count_dict
 
-
-# We will need: ixode_count_dict, paramd,
+# This function builds the dataframes we need for plotting and returns the final df
 def build_dataframe(ixodesdict, paramdict):
 
     _, plot_type, _, _ = get_args()
