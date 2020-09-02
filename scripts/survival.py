@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 # Last update:
 
 # This script creates parameter mappings, groups the data frames appropriately, handles categoricals, and creates
-# the plots that represent Ixode survivability
+# the plots that represent Ixode habitat-suitability
 
 # TODO
 
