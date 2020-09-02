@@ -5,7 +5,7 @@ scripts/testing.py
 
 ### JupyterNotebook ###
 .ipynb_checkpoints
-*/.ipynb_checkpoints/*
+**/.ipynb_checkpoints/*
 notebooks/failures.ipynb
 
 # Remove previous ipynb_checkpoints
