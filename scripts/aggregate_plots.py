@@ -7,22 +7,40 @@ from datetime import datetime
 # This script is intended to create a plot for habitat suitability & Total Ixodes to visualize the impact of
 # habitat suitability on Ixodes survival rates.
 #
-# Some of these functions are dependent on the file format for params and data files. A change in file sinks within
-# Repast may require altering some of this code.
+# Usage: python3 ./aggregate_plots.py <paramfile> <csvfile> -plot <plot type> [-popup] [-root <directory>]
 #
+# The -popup option is for local use and allows a plot to be shown without automatically saving it. If this option
+# is ommitted, it defaults to save the plot to a specified directory
 #
+# The -root option allows directory specification. This is mostly for personal use, as there are still hard-coded
+# restrictions on directory structure. eg directly under the specified root directory, there MUST be a directory
+# called 'host' to store host_density plots, and a directory called 'habitat' to store habitat_suitability plots
+
+
 # TODO add argument for habitat or density plot
 parser = argparse.ArgumentParser()
-# parser.add_argument('param_file')
-# parser.add_argument('csv_file')
+parser.add_argument('param_file')
+parser.add_argument('csv_file')
 parser.add_argument('-popup', action='store_true')
-parser.add_argument('-plot', choices=['habitat', 'host'])
+parser.add_argument('-plot', choices=['habitat', 'host'], required=True)
+parser.add_argument('-root', action='store_true', help="Specify the root directory ")
 args = parser.parse_args()
 
-param_file = "/media/hill/DATA-LINUX/abm-data/habitat-suitability/testparams"
-csv_file = "/media/hill/DATA-LINUX/abm-data/habitat-suitability/testdf-agg"
-# param_file = "/home/hdenny2/plotting-code/data/host-density/new-model-agg/" + args.param_file
-# csv_file = "/home/hdenny2/plotting-code/data/host-density/new-model-agg/" + args.csv_file
+# FOR REMOTE:
+if args.root:
+    root_dir = args.root
+else:
+    root_dir = "/home/hdenny2/plotting-code/data/"
+
+param_file = root_dir + args.plot + "/" + args.param_file
+csv_file = root_dir + args.plot + "/" + args.csv_file
+
+print(param_file)
+print(csv_file)
+
+# FOR LOCAL:
+# param_file = "/media/hill/DATA-LINUX/abm-data/" + args.plot + "/" + args.param_file
+# csv_file = "/media/hill/DATA-LINUX/abm-data/" + args.plot + "/" + args.csv_file
 
 # TODO clean up plot labeling (add types?)
 
