@@ -14,7 +14,7 @@ import argparse
 #
 # TODO
 #  - argparse
-#       - make plot name an argument
+#       - make plot type an argument (habitat & host density)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('param_file')
