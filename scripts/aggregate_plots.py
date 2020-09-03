@@ -1,6 +1,6 @@
 import pandas as pd
 import matplotlib
-matplotlib.use('Agg')  # to run the script on remote server, otherwise it will try to use xwindows backend
+#matplotlib.use('Agg')  # to run the script on remote server, otherwise it will try to use xwindows backend
 import matplotlib.pyplot as plt
 import argparse
 from datetime import datetime
@@ -20,21 +20,28 @@ from datetime import datetime
 # --- Argparse ---
 
 parser = argparse.ArgumentParser()
-# parser.add_argument('param_file')
-# parser.add_argument('csv_file')
+parser.add_argument('-test', action='store_true')
+parser.add_argument('-two', action='store_true')
 parser.add_argument('-popup', action='store_true')
 parser.add_argument('-plot', choices=['habitat', 'host'], required=True)
 args = parser.parse_args()
 
 # FOR REMOTE:
-param_file = "/home/hdenny2/plotting-code/data/host/new-model-agg/host-density-new.2020.Aug.01.22_57_29"
-csv_file = "/home/hdenny2/plotting-code/data/host/new-model-agg/params-Aug1"
-# param_file = root_dir + args.plot + "/" + args.param_file
-# csv_file = root_dir + args.plot + "/" + args.csv_file
+# param_file = "/home/hdenny2/plotting-code/data/host/new-model-agg/host-density-new.2020.Aug.01.22_57_29"
+# csv_file = "/home/hdenny2/plotting-code/data/host/new-model-agg/params-Aug1"
+#
+# param_file1 = "/home/hdenny2/plotting-code/data/host/new-model-agg/params-Aug2"
+# csv_file1 = "/home/hdenny2/plotting-code/data/host/new-model-agg/host-density-new.2020.Aug.02.06_06_21"
+# param_file2 = "/home/hdenny2/plotting-code/data/host/new-model-agg/params-Aug2"
+# csv_file2 = "/home/hdenny2/plotting-code/data/host/new-model-agg/host-density-new.2020.Aug.02.06_06_21"
 
 # FOR LOCAL:
-# param_file = "/media/hill/DATA-LINUX/abm-data/habitat-suitability/testparams"
-# csv_file = "/media/hill/DATA-LINUX/abm-data/habitat-suitability/testdf-agg"
+#TODO update these
+testparam1 = "/media/hill/DATA-LINUX/abm-data/host-density/testparams"
+testdf1 = "/media/hill/DATA-LINUX/abm-data/host-density/testdf-agg"
+testparam2 = "/media/hill/DATA-LINUX/abm-data/host-density/testparams2"
+testdf2 = "/media/hill/DATA-LINUX/abm-data/host-density/testdf-agg2"
+
 
 
 def get_args():
@@ -62,20 +69,21 @@ def build_dictionaries(paramfile, csvfile):
     """
     dict_index, _, _, _ = get_args()
     print("Creating dictionaries...")
-    print("THE DICT INDEX IS: ", dict_index)
+    print("THE DICTIONARY INDEX IS: ", dict_index)
     paramd = {}
     with open(paramfile, 'r') as file:
         for line in file:
             result = line.replace("\t", ",").replace('\n', '').split(',')
-            print("result is ", result)
+            constant = str(result[4]) # for habitat plots, use 4. For host density, 8
+            # print("result is ", result)
             # attempt to add the value to run, if it doesn't exist, create it
             try:
                 paramd[int(result[0])].append(float(result[dict_index]))
             except KeyError:
                 paramd[int(result[0])] = float(result[dict_index])  # { run#: <plot_type> }
-    # print("PARAM dictionary: ")
-    # for k, v in paramd.items():
-    #     print(k, v)
+    print("PARAM dictionary: ")
+    for k, v in paramd.items():
+        print(k, v)
 
     # Make a dictionary that maps the run# to total ixodes { run#: cumulative_ixodes }
     ixodes_count_dict = {}
@@ -91,7 +99,7 @@ def build_dictionaries(paramfile, csvfile):
     # print("ixodes count dict:\n")
     # for k, v in ixodes_count_dict.items():
     #     print(k, v)
-    return paramd, ixodes_count_dict
+    return paramd, ixodes_count_dict, constant
 
 
 # This function builds the dataframes we need for plotting and returns the final df
@@ -126,6 +134,21 @@ def build_dataframe(ixodesdict, paramdict):
     return df_agg_final
 
 
+def plot_two(df1, df2, constant1, constant2):
+    matplotlib.use('Qt5Agg')
+    ax = df1.plot(x='habitat_suitability', y='agg_ixodes', label="Host Density: " + constant1)
+    ax.set_title("Test Agg Host Density")
+    ax.set_ylabel("Total Ixodes")
+    ax.set_xlabel("Host Density")
+    # Options to add text to the plot
+
+    # props = dict(facecolor='wheat', alpha=0.5)
+    # params = 'Lifestage: adult\nStarting Ixodes: 10\nHabitat Suitability: 0.05'
+    # ax.text(0.05, 21, s=params, bbox=props)
+    df2.plot(ax=ax, x='habitat_suitability', y='agg_ixodes', label="Host Density: " + constant2)
+    plt.show(block=True)
+
+
 def plot_df(finaldf):
 
     _, plot_type, x_label, plot_title = get_args()
@@ -134,6 +157,7 @@ def plot_df(finaldf):
     plt.xlabel(x_label)
     plt.title(plot_title)
     plt.plot(finaldf[plot_type], finaldf['agg_ixodes'], marker='o')
+    plt.show(block=True)
 
     # FIXME this conditional won't work on tesla server, we have to hard-code it under the import statement
 # Either show the plot as a popup or save it to a specified directory
@@ -153,6 +177,31 @@ def plot_df(finaldf):
     plt.savefig(server_path + plot_filename)
 
 
-param_dict, ixodes_dict = build_dictionaries(param_file, csv_file)
-final_df = build_dataframe(ixodes_dict, param_dict)
-plot_df(final_df)
+def main():
+
+    if args.test:
+        param1 = testparam1
+        param2 = testparam2
+        csv1 = testdf1
+        csv2 = testdf2
+    else:
+        param1 = param_file1
+        param2 = param_file2
+        csv1 = csv_file1
+        csv2 = csv_file2
+
+    if args.two:
+        param_dict1, ixodes_dict1, constant1 = build_dictionaries(param1, csv1)
+        final_df1 = build_dataframe(ixodes_dict1, param_dict1)
+        param_dict2, ixodes_dict2, constant2 = build_dictionaries(param2, csv2)
+        final_df2 = build_dataframe(ixodes_dict2, param_dict2)
+        plot_two(final_df1, final_df2, constant1, constant2)
+    else:
+        param_dict, ixodes_dict, constant = build_dictionaries(param1, csv1)
+        final_df = build_dataframe(ixodes_dict, param_dict)
+        plot_df(final_df)
+
+
+if __name__ == "__main__":
+    main()
+

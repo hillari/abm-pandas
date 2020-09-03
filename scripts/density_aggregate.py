@@ -1,6 +1,6 @@
 import pandas as pd
 import matplotlib
-matplotlib.use('Agg') # to run the script on remote server, otherwise it will try to use xwindows backend
+#matplotlib.use('Agg') # to run the script on remote server, otherwise it will try to use xwindows backend
 import matplotlib.pyplot as plt
 import argparse
 
@@ -14,16 +14,24 @@ import argparse
 #
 # TODO
 #  - this code needs some logic to check for param/csv formatting errors
-#  - re-run habitat 05 and 09 without the 1.0
+#  - process multiple files
 
 parser = argparse.ArgumentParser()
-# parser.add_argument('param_file')
-# parser.add_argument('csv_file')
+parser.add_argument('-test', action='store_true')
 parser.add_argument('-popup', action='store_true')
+parser.add_argument('-two', action='store_true')
 args = parser.parse_args()
 
-param_file = "/home/hdenny2/plotting-code/data/host/new-model-agg/params-Aug2"
-csv_file = "/home/hdenny2/plotting-code/data/host/new-model-agg/host-density-new.2020.Aug.02.06_06_21"
+testparam1 = "/media/hill/DATA-LINUX/abm-data/habitat-suitability/testparams"
+testdf1 = "/media/hill/DATA-LINUX/abm-data/habitat-suitability/testdf-agg"
+testparam2 = "/media/hill/DATA-LINUX/abm-data/habitat-suitability/testparams2"
+testdf2 = "/media/hill/DATA-LINUX/abm-data/habitat-suitability/testdf-agg2"
+
+param_file1 = "/home/hdenny2/plotting-code/data/host/new-model-agg/params-Aug2"
+csv_file1 = "/home/hdenny2/plotting-code/data/host/new-model-agg/host-density-new.2020.Aug.02.06_06_21"
+param_file2 = "/home/hdenny2/plotting-code/data/host/new-model-agg/params-Aug2"
+csv_file2 = "/home/hdenny2/plotting-code/data/host/new-model-agg/host-density-new.2020.Aug.02.06_06_21"
+
 # param_file = "/home/hdenny2/plotting-code/data/host-density/new-model-agg/" + args.param_file
 # csv_file = "/home/hdenny2/plotting-code/data/host-density/new-model-agg/" + args.csv_file
 
@@ -40,6 +48,7 @@ def build_dictionaries(paramfile, csvfile):
             except KeyError:
                 paramd[int(result[0])] = float(result[4])  # { run#: host_density }
     # Remove after testing
+    print("PARAM DICT: ")
     for k, v in paramd.items():
         print(k, v)
 
@@ -82,20 +91,68 @@ def build_dataframe(ixodesdict, paramdict):
     return df_agg_final
 
 
+def plot_two(df1, df2):
+    matplotlib.use('Qt5Agg')
+    fig, ax = plt.subplots()
+    ax.set_title("Test Agg Host Density")
+    ax.set_ylabel("Total Ixodes")
+    ax.set_xlabel("Host Density")
+    # props = dict(facecolor='wheat', alpha=0.5)
+    ax = df1.plot(df1['host_density'], df1['agg_ixodes'])
+    df2.plot(df1['host_density'], df1['agg_ixodes'], ax=ax)
+    plt.show(block=True)
+
+
 def plot_df(finaldf):
-    # matplotlib.use('Qt5Agg')
+    # Needs variable name changes, but this is the code we use to add figure text
+
+    # fig, ax = plt.subplots()
+    # ax.set_title("Test Agg Host Density")
+    # ax.set_ylabel("Total Ixodes")
+    # ax.set_xlabel("Host Density")
+    # props = dict(facecolor='wheat', alpha=0.5)
+    # ax.plot(df_agg_final['host_density'], df_agg_final['agg_ixodes'])
+    # plt.figtext(0.5, 0.5, 'Lifestage: adult\nStarting Ixodes: 10\nHabitat Suitability: 0.05', bbox=props)
+    # plt.show(block=True)
+
+
+    matplotlib.use('Qt5Agg')
     plt.ylabel("Cumulative Ixodes")
     plt.xlabel("Large Host Density")
     plt.title("Aggregated Host Density")
     plt.plot(finaldf['host_density'], finaldf['agg_ixodes'], marker='o')
 
 # Either show the plot as a popup or save it to a specified directory
-    if args.popup:
-        plt.show(block=True)
+if args.popup:
+    plt.show(block=True)
+else:
+    plt.savefig("/home/hdenny2/plotting-code/data/host/new-model-agg/density_Sept1_.png")
+
+
+def main():
+
+    if args.test:
+        param1 = testparam1
+        param2 = testparam1
+        csv1 = testdf1
+        csv2 = testdf2
     else:
-        plt.savefig("/home/hdenny2/plotting-code/data/host/new-model-agg/density_Sept1_.png")
+        param1 = param_file1
+        param2 = param_file2
+        csv1 = csv_file1
+        csv2 = csv_file2
+
+    if args.two:
+        param_dict1, ixodes_dict1 = build_dictionaries(param1, csv1)
+        final_df1 = build_dataframe(ixodes_dict1, param_dict1)
+        param_dict2, ixodes_dict2 = build_dictionaries(param2, csv2)
+        final_df2 = build_dataframe(ixodes_dict2, param_dict2)
+        plot_two(final_df1, final_df2)
+    else:
+        param_dict, ixodes_dict = build_dictionaries(param1, csv1)
+        final_df = build_dataframe(ixodes_dict, param_dict)
+        plot_df(final_df)
 
 
-param_dict, ixodes_dict = build_dictionaries(param_file, csv_file)
-final_df = build_dataframe(ixodes_dict, param_dict)
-plot_df(final_df)
+if __name__ == "__main__":
+    main()
