@@ -13,19 +13,19 @@ import argparse
 # Repast may require altering some of this code.
 #
 # TODO
-#  - argparse
-#       - make plot type an argument (habitat & host density)
+#  - this code needs some logic to check for param/csv formatting errors
+#  - re-run habitat 05 and 09 without the 1.0
 
 parser = argparse.ArgumentParser()
-parser.add_argument('param_file')
-parser.add_argument('csv_file')
+# parser.add_argument('param_file')
+# parser.add_argument('csv_file')
 parser.add_argument('-popup', action='store_true')
 args = parser.parse_args()
 
-# param_file = "/home/hdenny2/plotting-code/data/host-density/new-model-agg/params-Aug1"
-# csv_file = "/home/hdenny2/plotting-code/data/host-density/new-model-agg/host-density-new.2020.Aug.01.22_57_29"
-param_file = "/home/hdenny2/plotting-code/data/host-density/new-model-agg/" + args.param_file
-csv_file = "/home/hdenny2/plotting-code/data/host-density/new-model-agg/" + args.csv_file
+param_file = "/home/hdenny2/plotting-code/data/host/new-model-agg/params-Aug2"
+csv_file = "/home/hdenny2/plotting-code/data/host/new-model-agg/host-density-new.2020.Aug.02.06_06_21"
+# param_file = "/home/hdenny2/plotting-code/data/host-density/new-model-agg/" + args.param_file
+# csv_file = "/home/hdenny2/plotting-code/data/host-density/new-model-agg/" + args.csv_file
 
 
 def build_dictionaries(paramfile, csvfile):
@@ -93,7 +93,7 @@ def plot_df(finaldf):
     if args.popup:
         plt.show(block=True)
     else:
-        plt.savefig("/home/hdenny2/plotting-code/data/host-density/plots/density-agg-prob1-hab09.png")
+        plt.savefig("/home/hdenny2/plotting-code/data/host/new-model-agg/density_Sept1_.png")
 
 
 param_dict, ixodes_dict = build_dictionaries(param_file, csv_file)

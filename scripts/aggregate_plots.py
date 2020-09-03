@@ -135,7 +135,7 @@ def plot_df(finaldf):
     plt.title(plot_title)
     plt.plot(finaldf[plot_type], finaldf['agg_ixodes'], marker='o')
 
-         # FIXME this conditional won't work on tesla server, we have to hard-code it under the import statement
+    # FIXME this conditional won't work on tesla server, we have to hard-code it under the import statement
 # Either show the plot as a popup or save it to a specified directory
 #     if args.popup:
 #         matplotlib.use('Qt5Agg')
