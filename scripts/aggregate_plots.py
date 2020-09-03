@@ -1,8 +1,10 @@
 import pandas as pd
 import matplotlib
+matplotlib.use('Agg')  # to run the script on remote server, otherwise it will try to use xwindows backend
 import matplotlib.pyplot as plt
 import argparse
 from datetime import datetime
+
 
 # This script is intended to create a plot for habitat suitability & Total Ixodes to visualize the impact of
 # habitat suitability on Ixodes survival rates.
@@ -10,37 +12,29 @@ from datetime import datetime
 # Usage: python3 ./aggregate_plots.py <paramfile> <csvfile> -plot <plot type> [-popup] [-root <directory>]
 #
 # The -popup option is for local use and allows a plot to be shown without automatically saving it. If this option
-# is ommitted, it defaults to save the plot to a specified directory
+# is ommitted, the plot is saved to a hard-coded location
 #
-# The -root option allows directory specification. This is mostly for personal use, as there are still hard-coded
-# restrictions on directory structure. eg directly under the specified root directory, there MUST be a directory
-# called 'host' to store host_density plots, and a directory called 'habitat' to store habitat_suitability plots
-# Note that a specified root directory must include the trailing "/"
 
 # TODO better plot labeling
 
 # --- Argparse ---
 
 parser = argparse.ArgumentParser()
-parser.add_argument('param_file')
-parser.add_argument('csv_file')
+# parser.add_argument('param_file')
+# parser.add_argument('csv_file')
 parser.add_argument('-popup', action='store_true')
 parser.add_argument('-plot', choices=['habitat', 'host'], required=True)
-parser.add_argument('-root', action='store_true', help="Specify the root directory ")
 args = parser.parse_args()
 
 # FOR REMOTE:
-if args.root:
-    root_dir = args.root
-else:
-    root_dir = "/home/hdenny2/plotting-code/data/"
-
-param_file = root_dir + args.plot + "/" + args.param_file
-csv_file = root_dir + args.plot + "/" + args.csv_file
+param_file = "/home/hdenny2/plotting-code/data/host/new-model-agg/host-density-new.2020.Aug.01.22_57_29"
+csv_file = "/home/hdenny2/plotting-code/data/host/new-model-agg/params-Aug1"
+# param_file = root_dir + args.plot + "/" + args.param_file
+# csv_file = root_dir + args.plot + "/" + args.csv_file
 
 # FOR LOCAL:
-# param_file = "/media/hill/DATA-LINUX/abm-data/" + args.plot + "/" + args.param_file
-# csv_file = "/media/hill/DATA-LINUX/abm-data/" + args.plot + "/" + args.csv_file
+# param_file = "/media/hill/DATA-LINUX/abm-data/habitat-suitability/testparams"
+# csv_file = "/media/hill/DATA-LINUX/abm-data/habitat-suitability/testdf-agg"
 
 
 def get_args():
@@ -68,28 +62,32 @@ def build_dictionaries(paramfile, csvfile):
     """
     dict_index, _, _, _ = get_args()
     print("Creating dictionaries...")
+    print("THE DICT INDEX IS: ", dict_index)
     paramd = {}
     with open(paramfile, 'r') as file:
         for line in file:
-            result = line.replace("\t", ",").split(',')
-            # print("result is ", result)
+            result = line.replace("\t", ",").replace('\n', '').split(',')
+            print("result is ", result)
             # attempt to add the value to run, if it doesn't exist, create it
             try:
                 paramd[int(result[0])].append(float(result[dict_index]))
             except KeyError:
                 paramd[int(result[0])] = float(result[dict_index])  # { run#: <plot_type> }
-
+    # print("PARAM dictionary: ")
     # for k, v in paramd.items():
     #     print(k, v)
 
     # Make a dictionary that maps the run# to total ixodes { run#: cumulative_ixodes }
     ixodes_count_dict = {}
+    # TODO ideally, we add a check for column names at top of file due to Repast file sink inconsistencies
     colnames = ['run', 'tick', 'lifestate', 'name']
-    df = pd.read_csv(csvfile, names=colnames, header=None, error_bad_lines=False)
+    print("Creating initial data frame...")
+    df = pd.read_csv(csvfile, names=colnames, error_bad_lines=False)
+    print(df.head())
     for run in df.groupby('run'):
         current_df = run[1]
         ixodes_count_dict[run[0]] = len(current_df['name'].unique())
-    print("DONE creating dictionaries.")
+    print("DONE creating initial data frame.")
     # print("ixodes count dict:\n")
     # for k, v in ixodes_count_dict.items():
     #     print(k, v)
@@ -101,7 +99,7 @@ def build_dataframe(ixodesdict, paramdict):
 
     _, plot_type, _, _ = get_args()
     print("Building dataframes...")
-    # Creating a data frame from the cumulative_ixodes dict
+    # Creating a data frame from the ixodes_count dict
     df_final = pd.DataFrame(ixodesdict.items(), columns=['run', 'total_ixodes'])
     df_final[plot_type] = 0
 
@@ -137,16 +135,22 @@ def plot_df(finaldf):
     plt.title(plot_title)
     plt.plot(finaldf[plot_type], finaldf['agg_ixodes'], marker='o')
 
+         # FIXME this conditional won't work on tesla server, we have to hard-code it under the import statement
 # Either show the plot as a popup or save it to a specified directory
-    if args.popup:
-        matplotlib.use('Qt5Agg')
-        plt.show()
-    else:
-        matplotlib.use('Agg')  # to run the script on remote server, otherwise it will try to use xwindows backend
-        dt = datetime.now()
-        plot_filename = plot_type + dt.strftime("%d-%b-%y-H-%M") + ".png"
-        server_path = "/home/hdenny2/plotting-code/data/"
-        plt.savefig(server_path + plot_filename)
+#     if args.popup:
+#         matplotlib.use('Qt5Agg')
+#         plt.show()
+#     else:
+#         matplotlib.use('Agg')  # to run the script on remote server, otherwise it will try to use xwindows backend
+#         dt = datetime.now()
+#         plot_filename = plot_type + dt.strftime("%d-%b-%y-H-%M") + ".png"
+#         server_path = "/home/hdenny2/plotting-code/data/"
+#         plt.savefig(server_path + plot_filename)
+
+    dt = datetime.now()
+    plot_filename = plot_type + dt.strftime("%d-%b-%y-%H-%M") + ".png"
+    server_path = "/home/hdenny2/plotting-code/data/"
+    plt.savefig(server_path + plot_filename)
 
 
 param_dict, ixodes_dict = build_dictionaries(param_file, csv_file)
