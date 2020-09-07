@@ -1,6 +1,6 @@
 import pandas as pd
 import matplotlib
-#matplotlib.use('Agg')  # to run the script on remote server, otherwise it will try to use xwindows backend
+matplotlib.use('Agg')  # to run the script on remote server, otherwise it will try to use xwindows backend
 import matplotlib.pyplot as plt
 import argparse
 from datetime import datetime
@@ -15,7 +15,7 @@ from datetime import datetime
 # is ommitted, the plot is saved to a hard-coded location
 #
 
-# TODO better plot labeling
+# TODO: confidence intervals, organize/breakup functions, cleanup comments, update usage, argparse verbose
 
 # --- Argparse ---
 
@@ -27,37 +27,40 @@ parser.add_argument('-plot', choices=['habitat', 'host'], required=True)
 args = parser.parse_args()
 
 # FOR REMOTE:
-# param_file = "/home/hdenny2/plotting-code/data/host/new-model-agg/host-density-new.2020.Aug.01.22_57_29"
-# csv_file = "/home/hdenny2/plotting-code/data/host/new-model-agg/params-Aug1"
-#
-# param_file1 = "/home/hdenny2/plotting-code/data/host/new-model-agg/params-Aug2"
-# csv_file1 = "/home/hdenny2/plotting-code/data/host/new-model-agg/host-density-new.2020.Aug.02.06_06_21"
-# param_file2 = "/home/hdenny2/plotting-code/data/host/new-model-agg/params-Aug2"
-# csv_file2 = "/home/hdenny2/plotting-code/data/host/new-model-agg/host-density-new.2020.Aug.02.06_06_21"
+# single plot
+param_file = ""
+csv_file = ""
+
+# double plot
+param_file1 = "/home/hdenny2/plotting-code/data/host/params-Sept2-hab05"
+csv_file1 = "/home/hdenny2/plotting-code/data/host/host-density.2020.Sep.02.hab05"
+param_file2 = "/home/hdenny2/plotting-code/data/host/params-Sept2-hab07"
+csv_file2 = "/home/hdenny2/plotting-code/data/host/host-density.2020.Sep.02.hab07"
 
 # FOR LOCAL:
-#TODO update these
-testparam1 = "/media/hill/DATA-LINUX/abm-data/host-density/testparams"
-testdf1 = "/media/hill/DATA-LINUX/abm-data/host-density/testdf-agg"
-testparam2 = "/media/hill/DATA-LINUX/abm-data/host-density/testparams2"
-testdf2 = "/media/hill/DATA-LINUX/abm-data/host-density/testdf-agg2"
-
+# #TODO update these
+# testparam1 = "/media/hill/DATA-LINUX/abm-data/host-density/testparams"
+# testdf1 = "/media/hill/DATA-LINUX/abm-data/host-density/testdf-agg"
+# testparam2 = "/media/hill/DATA-LINUX/abm-data/host-density/testparams2"
+# testdf2 = "/media/hill/DATA-LINUX/abm-data/host-density/testdf-agg2"
 
 
 def get_args():
-    # This function uses argparse to tell the code which plots we are creating
+    # This function uses argparse to tell help generalize plot creation
 
     if args.plot == 'habitat':
         dict_index = 8
         plot_type = 'habitat_suitability'
-        x_label = "Habitat Suitability"
+        x_label = "Habitat Suitability "
         plot_title = "Aggregated Habitat Suitability"
+        plot_legend = "Host Density: "
     else:
         dict_index = 4
         plot_type = 'host_density'
-        x_label = "Host Density"
+        x_label = "Host Density "
         plot_title = "Aggregated Host Density"
-    return dict_index, plot_type, x_label, plot_title
+        plot_legend = "Habitat Suitability: "
+    return dict_index, plot_type, x_label, plot_title, plot_legend
 
 
 def build_dictionaries(paramfile, csvfile):
@@ -67,23 +70,23 @@ def build_dictionaries(paramfile, csvfile):
     :param csvfile: the repast file sink
     :return paramd, ixodes_count_dict: parameter dictionary and cumulative ixodes dictionary
     """
-    dict_index, _, _, _ = get_args()
+    dict_index, _, _, _, _ = get_args()
     print("Creating dictionaries...")
     print("THE DICTIONARY INDEX IS: ", dict_index)
     paramd = {}
     with open(paramfile, 'r') as file:
         for line in file:
             result = line.replace("\t", ",").replace('\n', '').split(',')
-            constant = str(result[4]) # for habitat plots, use 4. For host density, 8
+            constant = str(result[8])  # for habitat plots, use 4. For host density, 8
             # print("result is ", result)
             # attempt to add the value to run, if it doesn't exist, create it
             try:
                 paramd[int(result[0])].append(float(result[dict_index]))
             except KeyError:
                 paramd[int(result[0])] = float(result[dict_index])  # { run#: <plot_type> }
-    print("PARAM dictionary: ")
-    for k, v in paramd.items():
-        print(k, v)
+    # print("PARAM dictionary: ")
+    # for k, v in paramd.items():
+    #     print(k, v)
 
     # Make a dictionary that maps the run# to total ixodes { run#: cumulative_ixodes }
     ixodes_count_dict = {}
@@ -91,11 +94,12 @@ def build_dictionaries(paramfile, csvfile):
     colnames = ['run', 'tick', 'lifestate', 'name']
     print("Creating initial data frame...")
     df = pd.read_csv(csvfile, names=colnames, error_bad_lines=False)
+    print("DONE creating initial data frame.")
     print(df.head())
     for run in df.groupby('run'):
         current_df = run[1]
         ixodes_count_dict[run[0]] = len(current_df['name'].unique())
-    print("DONE creating initial data frame.")
+
     # print("ixodes count dict:\n")
     # for k, v in ixodes_count_dict.items():
     #     print(k, v)
@@ -105,8 +109,8 @@ def build_dictionaries(paramfile, csvfile):
 # This function builds the dataframes we need for plotting and returns the final df
 def build_dataframe(ixodesdict, paramdict):
 
-    _, plot_type, _, _ = get_args()
-    print("Building dataframes...")
+    _, plot_type, _, _, _ = get_args()
+    print("Building additional dataframes...")
     # Creating a data frame from the ixodes_count dict
     df_final = pd.DataFrame(ixodesdict.items(), columns=['run', 'total_ixodes'])
     df_final[plot_type] = 0
@@ -120,44 +124,53 @@ def build_dataframe(ixodesdict, paramdict):
     # Create a dictionary with { <plot_type>: agg_ixodes }
     agg_ixodes_dict = {}
     for density in df_final.groupby(plot_type):
-        tmp_df = density[1]  # density is a tuple, so density[1] is the df we want
+        tmp_df = density[1]  # density is a tuple, so density[1] holds the df we want
         agg_ixodes_dict[density[0]] = tmp_df['total_ixodes'].agg('mean')
 
-    # print("AGG_IXODES dict:")
-    # for k, v in agg_ixodes_dict.items():
-    #     print(k, "-", v)
+    print("AGG_IXODES dict:")
+    for k, v in agg_ixodes_dict.items():
+        print(k, "-", v)
 
     # Create a dataframe from the agg_ixodes_dict which we will use to plot
     df_agg_final = pd.DataFrame(agg_ixodes_dict.items(), columns=[plot_type, 'agg_ixodes'])
     print(df_agg_final.head())
-    print("DONE building dataframes.")
+    print("DONE building dataframe.")
     return df_agg_final
 
 
 def plot_two(df1, df2, constant1, constant2):
-    matplotlib.use('Qt5Agg')
-    ax = df1.plot(x='habitat_suitability', y='agg_ixodes', label="Host Density: " + constant1)
-    ax.set_title("Test Agg Host Density")
+    _, plot_type, x_label, plot_title, legend = get_args()
+    # matplotlib.use('Qt5Agg')
+    ax = df1.plot(x=plot_type, y='agg_ixodes', label=legend + constant1)
+    ax.set_title(plot_title)
     ax.set_ylabel("Total Ixodes")
-    ax.set_xlabel("Host Density")
+    ax.set_xlabel(x_label)
     # Options to add text to the plot
 
     # props = dict(facecolor='wheat', alpha=0.5)
     # params = 'Lifestage: adult\nStarting Ixodes: 10\nHabitat Suitability: 0.05'
     # ax.text(0.05, 21, s=params, bbox=props)
-    df2.plot(ax=ax, x='habitat_suitability', y='agg_ixodes', label="Host Density: " + constant2)
-    plt.show(block=True)
+    df2.plot(ax=ax, x=plot_type, y='agg_ixodes', label=legend + constant2)
+    # plt.show(block=True)
+    dt = datetime.now()
+    plot_filename = plot_type + dt.strftime("_%d-%b-%y-%H-%M") + ".png"
+    server_path = "/home/hdenny2/plotting-code/data/"
+    plt.savefig(server_path + plot_filename)
 
 
 def plot_df(finaldf):
 
-    _, plot_type, x_label, plot_title = get_args()
+    _, plot_type, x_label, plot_title, legend = get_args()
     print("Plotting data...")
     plt.ylabel("Cumulative Ixodes")
     plt.xlabel(x_label)
     plt.title(plot_title)
     plt.plot(finaldf[plot_type], finaldf['agg_ixodes'], marker='o')
-    plt.show(block=True)
+    # plt.show(block=True)
+    dt = datetime.now()
+    plot_filename = plot_type + dt.strftime("_%d-%b-%y-%H-%M") + ".png"
+    server_path = "/home/hdenny2/plotting-code/data/"
+    plt.savefig(server_path + plot_filename)
 
     # FIXME this conditional won't work on tesla server, we have to hard-code it under the import statement
 # Either show the plot as a popup or save it to a specified directory
@@ -171,10 +184,7 @@ def plot_df(finaldf):
 #         server_path = "/home/hdenny2/plotting-code/data/"
 #         plt.savefig(server_path + plot_filename)
 
-    dt = datetime.now()
-    plot_filename = plot_type + dt.strftime("%d-%b-%y-%H-%M") + ".png"
-    server_path = "/home/hdenny2/plotting-code/data/"
-    plt.savefig(server_path + plot_filename)
+
 
 
 def main():
@@ -193,8 +203,10 @@ def main():
     if args.two:
         param_dict1, ixodes_dict1, constant1 = build_dictionaries(param1, csv1)
         final_df1 = build_dataframe(ixodes_dict1, param_dict1)
+
         param_dict2, ixodes_dict2, constant2 = build_dictionaries(param2, csv2)
         final_df2 = build_dataframe(ixodes_dict2, param_dict2)
+
         plot_two(final_df1, final_df2, constant1, constant2)
     else:
         param_dict, ixodes_dict, constant = build_dictionaries(param1, csv1)
