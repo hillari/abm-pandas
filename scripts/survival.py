@@ -10,12 +10,12 @@ import matplotlib.pyplot as plt
 # Last update:
 
 # This script creates parameter mappings, groups the data frames appropriately, handles categoricals, and creates
-# the plots that represent Ixode survivability
+# the plots that represent Ixode habitat-suitability
 
 # TODO
 
-# - Fix directory looping code to match current project structure
-# - Add in the code that handles 90 day skips
+# - Clean up, archive, and remove from repo
+# -
 # -
 
 
@@ -55,7 +55,7 @@ def plot_runs(paramsfile, datafile):
         fig, ax = plt.subplots(figsize=(12, 7))
         grouped.sum().plot(logy=False, ax=ax)
         ax.set_title("Survivability", fontsize=16, fontweight='bold')
-        # ax.set_title(params, fontsize=10, horizontalalignment='left', loc='left')
+        # ax.set_title(params, fontsize=10, horizontal alignment='left', loc='left')
         ax.set_xlabel("Days", fontsize=12)
         ax.set_ylabel("Lifestate count", fontsize=12)
         props = dict(facecolor='wheat', alpha=0.5)
