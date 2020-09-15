@@ -12,9 +12,8 @@ import argparse
 # Some of these functions are dependent on the file format for params and data files. A change in file sinks within
 # Repast may require altering some of this code.
 #
-# TODO
-#  - this code needs some logic to check for param/csv formatting errors
-#  - process multiple files
+# UPDATE 9/14/2020 This code is no longer used but it works so I'm keeping it for reference
+#
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-test', action='store_true')

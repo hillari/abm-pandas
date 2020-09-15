@@ -15,6 +15,11 @@ import matplotlib.pyplot as plt
 #
 # { habitat: [ [run_number], [host_density] ] }
 #
+# NOTE: The newer, refactored version of this code should be used. This can still be used for non-agg runs
+# Kept for reference.
+# 09/14/2020
+
+
 def build_habitat_dict(paramfile):
     # paramfile = "../data/host-density/adult-runs/unrolledParamFile-June1.txt"
     param_dict = {}

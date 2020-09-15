@@ -14,8 +14,8 @@ import matplotlib.pyplot as plt
 
 # TODO
 
-# - Fix directory looping code to match current project structure
-# - Add in the code that handles 90 day skips
+# - Clean up, archive, and remove from repo
+# -
 # -
 
 
