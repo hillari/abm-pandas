@@ -8,7 +8,7 @@ import numpy as np
 import argparse
 
 # TODO
-# -
+# - remove outliers for cumulative ixodes (make OPTIONAL argparse for this, threshold argument?)
 
 
 parser = argparse.ArgumentParser()
@@ -26,17 +26,11 @@ def get_args():
         constant_index = 4
         plot_type = 'habitat_suitability'
         constant = 'host_density'
-        # x_label = "Habitat Suitability "
-        # plot_title = "Aggregated Habitat Suitability"
-        # plot_legend = "Host Density: "
     else:
         dict_index = 4
         constant_index = 8
         plot_type = 'host_density'
         constant = 'habitat_suitability'
-        # x_label = "Host Density "
-        # plot_title = "Aggregated Host Density"
-        # plot_legend = "Habitat Suitability: "
     return dict_index, constant_index, plot_type, constant
 
 
@@ -70,8 +64,8 @@ def get_datafile(csvfile):
 
 
 def clean_data(raw_df):
+    # TODO option to remove outliers here
     # filter bad lines
-    # drop if necessary (prob not)
     # returns df
     df = raw_df  # ? Because if we have arg = df and return df...?
     print("Filtering database...")
@@ -114,7 +108,7 @@ def write_df(final_df):
         writemode = 'a'
         header = False
 
-    # TODO get current dir, chagne filename
+    # TODO get current dir, change filename
     final_df.to_csv('/media/hill/DATA-LINUX/abm-data/host-density-olderruns/new-model/aggregate-runs/adddf', mode=writemode, header=header)
 
 
