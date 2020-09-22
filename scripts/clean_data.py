@@ -8,13 +8,17 @@ import numpy as np
 import argparse
 
 # TODO
-# - remove outliers for cumulative ixodes (make OPTIONAL argparse for this, threshold argument?)
+# -
+# - Modify skiplines in agg_plots.py (~12?)
 
 
 parser = argparse.ArgumentParser()
 # parser.add_argument('-test', action='store_true')
 # parser.add_argument('paramfile')
 # parser.add_argument('csvfile')
+
+# outliers argument, could give it a list of options so user can pass the threshold
+parser.add_argument('-outliers', action='store_true', help="Remove outliers (runs that didn't make it past 90 days)")
 parser.add_argument('-type', choices=['habitat', 'host'], required=True)
 parser.add_argument('-first', action='store_true')
 args = parser.parse_args()
@@ -36,7 +40,7 @@ def get_args():
 
 def get_params(paramfile, dict_index, constant_index):
     # get paramfile and make dict
-    # Create a dictionary that maps the run# to host_density { run#: host_density }
+    # Create a dictionary that maps the run#  { run#: host_density/habitat_suitability }
     paramfile = paramfile
     param_dict = {}
     with open(paramfile, 'r') as file:
@@ -64,10 +68,9 @@ def get_datafile(csvfile):
 
 
 def clean_data(raw_df):
-    # TODO option to remove outliers here
     # filter bad lines
     # returns df
-    df = raw_df  # ? Because if we have arg = df and return df...?
+    df = raw_df  # ...Because if we have arg = df and return = df...? check this
     print("Filtering database...")
     before = datetime.now()
     print("Max before filtering...", df['tick'].max())
@@ -79,13 +82,16 @@ def clean_data(raw_df):
 
 
 def build_df(clean_df, paramfile, constant, dict_index, constant_index):
+    # TODO test outliers conditional
     # aggregate, parse paramfile and map, make final agg df w/std
-
     param_dict = get_params(paramfile, dict_index, constant_index)
     print("Building df...")
     before = datetime.now()
     n_ticks_df = clean_df.groupby(['run'], as_index=False)
-    n_ticks_df = n_ticks_df.agg({'total_ixodes': 'nunique'})
+    n_ticks_df = n_ticks_df.agg({'total_ixodes': 'nunique', 'days': 'max'})
+
+    if args.outliers:
+        n_ticks_df = n_ticks_df[n_ticks_df['tick'] > 90]
 
     # get the parameter mappings and add to df
     for key, value in param_dict.items():
