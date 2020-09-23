@@ -32,7 +32,7 @@ def get_dataframe(csvfile):
     fig, ax = plt.subplots()
     for label, df in df.groupby('habitat_suitability'):
         df.plot('host_density', 'mean', ax=ax, label=label)
-    plt.legend(title=)
+    plt.legend(title='')
 
 
 def group_df():
