@@ -1,13 +1,13 @@
 import pandas as pd
 import argparse
 import matplotlib
-matplotlib.use('Agg')
+# matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 from datetime import datetime
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-type', choices=['habitat', 'host'], required=True)
-parser.add_argument('-first', action='store_true')
+# parser.add_argument('-first', action='store_true')
 args = parser.parse_args()
 
 # TODO
@@ -28,15 +28,21 @@ def get_args():
     return x_label, plot_title, plot_legend
 
 
-def plot(csvfile, legend):
+# TODO plot error bars/ CI
+def plot(csvfile, legend, xlabel):
     df = pd.read_csv(csvfile)
     fig, ax = plt.subplots()
-    for label, df in df.groupby('habitat_suitability'):
-        df.plot('host_density', 'mean', ax=ax, label=label)
+    plt.ylabel("Cumulative Ixodes")
+    plt.xlabel(xlabel)
+    plt.title("Aggregated Host Density")
+    for label, data in df.groupby('habitat_suitability'):
+        # plt.errorbar(data['host_density'], data['mean'], yerr=1.96*data['std'])
+        data.plot('host_density', 'mean', ax=ax, label=label, marker='o', markersize=3)
     plt.legend(title=legend)
-    # TODO plot labels, CI, legend formatting
     server_path = ""
-    plt.savefig("/home/hdenny2/plotting-code/data/host/final/aggplottest.png")
+    # plt.savefig("../data/host/aggplottest.png")
+    plt.show()
 
-
+csvfile = "../data/host/host_agg_df"
 x_label, plot_title, plot_legend = get_args()
+plot(csvfile, plot_legend, x_label)

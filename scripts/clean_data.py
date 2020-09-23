@@ -1,3 +1,6 @@
+# Hillari M Denny
+# 9/23/2020
+
 import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
@@ -8,8 +11,8 @@ import numpy as np
 import argparse
 
 # TODO
-# -
-# - Modify skiplines in agg_plots.py (~12?)
+# - Verbosity flag + conditional prints
+# - Modify skiplines in agg_plots.py (~13)
 
 
 parser = argparse.ArgumentParser()
@@ -60,10 +63,12 @@ def get_datafile(csvfile):
     # read the csv, return resulting df
     colnames = ['run', 'tick', 'lifestate', 'total_ixodes']
     csv_file = csvfile
+    print("Reading csv file...")
     before = datetime.now()
-    df = pd.read_csv(csv_file, skiprows=8, names=colnames, error_bad_lines=False)
+    df = pd.read_csv(csv_file, skiprows=1, names=colnames, error_bad_lines=False)
     after = datetime.now()
     print("read_csv() runtime: ", after - before)
+    print(df.head())
     return df
 
 
@@ -73,11 +78,11 @@ def clean_data(raw_df):
     df = raw_df  # ...Because if we have arg = df and return = df...? check this
     print("Filtering database...")
     before = datetime.now()
-    print("Max before filtering...", df['tick'].max())
+    # print("Max before filtering...", df['tick'].max())
     df = df[df['tick'] < 451]
     after = datetime.now()
     print("Filtering runtime: ", after - before)
-    print("Max after filtering...", df['tick'].max())
+    # print("Max after filtering...", df['tick'].max())
     return df
 
 
@@ -89,7 +94,7 @@ def build_df(clean_df, paramfile, constant, dict_index, constant_index):
     n_ticks_df = clean_df.groupby(['run'], as_index=False)
     n_ticks_df = n_ticks_df.agg({'total_ixodes': 'nunique', 'tick': 'max'})
 
-    # TODO test outliers conditional
+    # TODO log params for outlier runs
     if args.outliers:
         n_ticks_df = n_ticks_df[n_ticks_df['tick'] > 90]
 
@@ -114,8 +119,8 @@ def write_df(final_df):
         writemode = 'a'
         header = False
 
-    # TODO get current dir, change filename
-    final_df.to_csv('/home/hdenny2/plotting-code/data/host/final/host-aggregated_data', mode=writemode, header=header)
+    # TODO get current dir
+    final_df.to_csv('/home/hdenny2/plotting-code/data/host/final/host-aggregated_data_sans_outliers', mode=writemode, header=header)
 
 
 def main():
