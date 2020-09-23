@@ -7,15 +7,15 @@ import matplotlib.pyplot as plt
 
 # Hillari Denny
 # Original Date: 2/18/2020
-# Last update:
+# Last update: 9/3/2020 - This code is deprecated. See clean_data.py and plot_data.py for current version
+# This code still serves as a good reference so I'll let it stay for now.
 
 # This script creates parameter mappings, groups the data frames appropriately, handles categoricals, and creates
 # the plots that represent Ixode habitat-suitability
 
 # TODO
-
 # - Clean up, archive, and remove from repo
-# -
+# - refactor the directory looping functionality
 # -
 
 
