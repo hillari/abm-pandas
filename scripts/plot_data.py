@@ -28,17 +28,15 @@ def get_args():
     return x_label, plot_title, plot_legend
 
 
-def get_dataframe(csvfile):
+def plot(csvfile, legend):
     df = pd.read_csv(csvfile)
     fig, ax = plt.subplots()
     for label, df in df.groupby('habitat_suitability'):
         df.plot('host_density', 'mean', ax=ax, label=label)
-    plt.legend(title='')
+    plt.legend(title=legend)
+    # TODO plot labels, CI, legend formatting
+    server_path = ""
+    plt.savefig("/home/hdenny2/plotting-code/data/host/final/aggplottest.png")
 
 
-def group_df():
-    pass
-
-
-def write_df(dataframe):
-    pass
+x_label, plot_title, plot_legend = get_args()
