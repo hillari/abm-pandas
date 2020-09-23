@@ -7,11 +7,12 @@ from datetime import datetime
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-type', choices=['habitat', 'host'], required=True)
+parser.add_argument('-first', action='store_true')
 args = parser.parse_args()
 
 # TODO
-# -
-# -
+# - organize functionality
+# - make groupby an arg
 
 
 def get_args():
@@ -39,3 +40,5 @@ def group_df():
     pass
 
 
+def write_df(dataframe):
+    pass
