@@ -7,6 +7,9 @@ from datetime import datetime
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-type', choices=['habitat', 'host'], required=True)
+
+parser.add_argument('-skip', type=int, action='store')
+
 # parser.add_argument('-first', action='store_true')
 args = parser.parse_args()
 
@@ -24,6 +27,8 @@ def get_args():
         x_label = 'Host Density'
         plot_title = ''
         plot_legend = 'Habitat Suitability: '
+
+    print(args.skip)
 
     return x_label, plot_title, plot_legend
 

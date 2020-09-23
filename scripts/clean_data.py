@@ -12,7 +12,7 @@ import argparse
 
 # TODO
 # - Verbosity flag + conditional prints
-# - Modify skiplines in agg_plots.py (~13)
+# - test skiplines arg
 
 
 parser = argparse.ArgumentParser()
@@ -24,6 +24,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-outliers', action='store_true', help="Remove outliers (runs that didn't make it past 90 days)")
 parser.add_argument('-type', choices=['habitat', 'host'], required=True)
 parser.add_argument('-first', action='store_true')
+parser.add_argument('-skip', type=int, action='store')
 args = parser.parse_args()
 
 
@@ -63,9 +64,14 @@ def get_datafile(csvfile):
     # read the csv, return resulting df
     colnames = ['run', 'tick', 'lifestate', 'total_ixodes']
     csv_file = csvfile
+    if args.skip:
+        nlines = args.skip
+    else:
+        nlines = 1
     print("Reading csv file...")
+    print("Skipping {} lines".format(nlines))
     before = datetime.now()
-    df = pd.read_csv(csv_file, skiprows=1, names=colnames, error_bad_lines=False)
+    df = pd.read_csv(csv_file, skiprows=nlines, names=colnames, error_bad_lines=False)
     after = datetime.now()
     print("read_csv() runtime: ", after - before)
     print(df.head())
@@ -125,8 +131,8 @@ def write_df(final_df):
 
 def main():
     # Specify hard-coded files for testing here
-    paramfile = "/home/hdenny2/plotting-code/data/host/final/host-params_hab01"
-    csvfile = "/home/hdenny2/plotting-code/data/host/final/host-density.2020.Sep.07hab01"
+    paramfile = "/home/hdenny2/plotting-code/data/host/final/host-params_hab03"
+    csvfile = "/home/hdenny2/plotting-code/data/host/final/host-density.2020.Sep.07hab03"
 
     dict_index, constant_index, plot_type, constant_str = get_args()
 
