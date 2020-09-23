@@ -1,6 +1,6 @@
 import pandas as pd
 import matplotlib
-# matplotlib.use('Qt5Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import csv
 from datetime import datetime
@@ -82,14 +82,14 @@ def clean_data(raw_df):
 
 
 def build_df(clean_df, paramfile, constant, dict_index, constant_index):
-    # TODO test outliers conditional
     # aggregate, parse paramfile and map, make final agg df w/std
     param_dict = get_params(paramfile, dict_index, constant_index)
     print("Building df...")
     before = datetime.now()
     n_ticks_df = clean_df.groupby(['run'], as_index=False)
-    n_ticks_df = n_ticks_df.agg({'total_ixodes': 'nunique', 'days': 'max'})
+    n_ticks_df = n_ticks_df.agg({'total_ixodes': 'nunique', 'tick': 'max'})
 
+    # TODO test outliers conditional
     if args.outliers:
         n_ticks_df = n_ticks_df[n_ticks_df['tick'] > 90]
 
@@ -115,13 +115,13 @@ def write_df(final_df):
         header = False
 
     # TODO get current dir, change filename
-    final_df.to_csv('/media/hill/DATA-LINUX/abm-data/host-density-olderruns/new-model/aggregate-runs/adddf', mode=writemode, header=header)
+    final_df.to_csv('/home/hdenny2/plotting-code/data/host/final/host-aggregated_data', mode=writemode, header=header)
 
 
 def main():
     # Specify hard-coded files for testing here
-    paramfile = "/media/hill/DATA-LINUX/abm-data/host-density-olderruns/new-model/aggregate-runs/params_09habitat"
-    csvfile = "/media/hill/DATA-LINUX/abm-data/host-density-olderruns/new-model/aggregate-runs/density-new.2020.Jul.11hab_09"
+    paramfile = "/home/hdenny2/plotting-code/data/host/final/host-params_hab01"
+    csvfile = "/home/hdenny2/plotting-code/data/host/final/host-density.2020.Sep.07hab01"
 
     dict_index, constant_index, plot_type, constant_str = get_args()
 
