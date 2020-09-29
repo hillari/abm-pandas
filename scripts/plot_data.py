@@ -13,6 +13,7 @@ args = parser.parse_args()
 # TODO
 # - organize functionality
 # - make groupby an arg
+# - add code to do histograms for outlier runs
 
 
 def get_args():
