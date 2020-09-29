@@ -8,8 +8,6 @@ parser = argparse.ArgumentParser()
 # parser.add_argument('paramfile')
 # parser.add_argument('csvfile')
 
-# outliers argument, could give it a list of options so user can pass the threshold
-parser.add_argument('-outliers', action='store_true', help="Remove outliers (runs that didn't make it past 90 days)")
 parser.add_argument('-type', choices=['habitat', 'host'], required=True)
 parser.add_argument('-first', action='store_true', help="This flag causes writemode to me write ('w'),"
                                                         "otherwise we write in append mode ('a')")
@@ -44,8 +42,8 @@ def get_params(paramfile, dict_index, constant_index):
                 param_dict[int(result[0])].append(float(result[dict_index]), float(result[constant_index]))
             except KeyError:
                 param_dict[int(result[0])] = (float(result[dict_index]), float(result[constant_index]))
-    for k, v in param_dict.items():
-        print(k, v)
+    # for k, v in param_dict.items():
+    #     print(k, v)
         return param_dict
 
 
@@ -90,10 +88,8 @@ def agg_ixodes_and_days(clean_df):
 
 
 def filter_outliers(agg_df):
-    # If we are handling outliers, we need two separate data frames
-    lineplot_df = agg_df[agg_df['tick'] > 89]
     histogram_df = agg_df[agg_df['tick'] < 91]
-    return lineplot_df, histogram_df
+    return histogram_df
 
 
 # Pass the filtered/cleaned df
@@ -107,31 +103,7 @@ def map_params(df, paramfile, dict_index, constant_index, constant, plot_type):
     print(dataframe.head())
     return dataframe
 
-# FIXME calling this in this way *after* we map params 'deletes' other params
-def get_std(dataframe):
-    lineplot_df = dataframe.groupby('host_density')['total_ixodes'].agg({'mean', 'std'})
-    print(lineplot_df.head())
-    return lineplot_df
 
-# stopped here
-# def build_df(df, paramfile, dict_index, constant_index, constant, plot_type):
-#     param_dict = get_params(paramfile, dict_index, constant_index)
-#     dataframe = df
-#     for key, value in param_dict.items():
-#         dataframe.loc[dataframe['run'] == key, plot_type] = float(value[0])
-#
-#     if not args.outliers:
-#         lineplot_df = dataframe.groupby('host_density')['total_ixodes'].agg({'mean', 'std'})
-#         lineplot_df[constant] = param_dict[1][1]
-#     else:
-#         lineplot_df, histogram_df = filter_outliers(df)
-#
-#
-
-
-
-
-# TODO pass path as arg, make one for server one for local?
 def write_df(final_df, filename):
     if args.first:
         writemode = 'w'
@@ -151,19 +123,12 @@ def main():
 
     raw_df = get_datafile(csvfile)
     clean_df = clean_data(raw_df)
-    df = agg_ixodes_and_days(clean_df)
+    agg_df = agg_ixodes_and_days(clean_df)
+    df = filter_outliers(agg_df)
 
-    # TODO change args/functions so we don't have to call these twice
-    if args.outliers:
-        agg_df, histogram_df = filter_outliers(df)
-        lineplot_df = map_params(agg_df, paramfile, dict_index, constant_index, plot_type, constant_str)
-        histogram_df = map_params(histogram_df, paramfile, dict_index, constant_index, plot_type, constant_str)
-        write_df(lineplot_df, 'agg-lineplot-df')
-        write_df(histogram_df, 'outlier-hist-df')
-    else:
-        lineplot_df = map_params(df, paramfile, dict_index, constant_index, plot_type, constant_str)
-        final_df = get_std(lineplot_df)
-        write_df(final_df, 'agg-lineplot-df')
+    final_df = map_params(df, paramfile, dict_index, constant_index, constant_str, plot_type)
+    filename = plot_type+"_outlier-df"
+    write_df(final_df, filename)
 
 
 if __name__ == "__main__":
