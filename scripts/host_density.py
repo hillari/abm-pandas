@@ -15,9 +15,9 @@ import matplotlib.pyplot as plt
 #
 # { habitat: [ [run_number], [host_density] ] }
 #
-# NOTE: The newer, refactored version of this code should be used. This can still be used for non-agg runs
-# Kept for reference.
 # 09/14/2020
+# NOTE: The newer, refactored version of this code should be used (clean_data.py and plot_data.py)
+# This can still be used for non-agg runs. Kept mostly for reference.
 
 
 def build_habitat_dict(paramfile):

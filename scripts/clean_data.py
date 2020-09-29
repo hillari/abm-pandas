@@ -1,3 +1,6 @@
+# Hillari M Denny
+# 9/23/2020
+
 import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
@@ -8,8 +11,8 @@ import numpy as np
 import argparse
 
 # TODO
+# - Verbosity flag + conditional prints
 # -
-# - Modify skiplines in agg_plots.py (~12?)
 
 
 parser = argparse.ArgumentParser()
@@ -21,6 +24,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-outliers', action='store_true', help="Remove outliers (runs that didn't make it past 90 days)")
 parser.add_argument('-type', choices=['habitat', 'host'], required=True)
 parser.add_argument('-first', action='store_true')
+parser.add_argument('-skip', type=int, action='store', help="First n lines to skip in file sink")
 args = parser.parse_args()
 
 
@@ -60,10 +64,17 @@ def get_datafile(csvfile):
     # read the csv, return resulting df
     colnames = ['run', 'tick', 'lifestate', 'total_ixodes']
     csv_file = csvfile
+    if args.skip:
+        nlines = args.skip
+    else:
+        nlines = 1
+    print("Reading csv file...")
+    print("Skipping {} lines".format(nlines))
     before = datetime.now()
-    df = pd.read_csv(csv_file, skiprows=8, names=colnames, error_bad_lines=False)
+    df = pd.read_csv(csv_file, skiprows=nlines, names=colnames, error_bad_lines=False)
     after = datetime.now()
     print("read_csv() runtime: ", after - before)
+    print(df.head())
     return df
 
 
@@ -73,13 +84,24 @@ def clean_data(raw_df):
     df = raw_df  # ...Because if we have arg = df and return = df...? check this
     print("Filtering database...")
     before = datetime.now()
-    print("Max before filtering...", df['tick'].max())
+    # print("Max before filtering...", df['tick'].max())
     df = df[df['tick'] < 451]
     after = datetime.now()
     print("Filtering runtime: ", after - before)
-    print("Max after filtering...", df['tick'].max())
+    # print("Max after filtering...", df['tick'].max())
     return df
 
+
+# # Pass the filtered/cleaned df
+# # NEEDS TESTING
+# def map_params(dataframe, paramfile, dict_index, constant_index, constant):
+#     param_dict = get_params(paramfile, dict_index, constant_index)
+#     # get the parameter mappings and add to df
+#     for key, value in param_dict.items():
+#         dataframe.loc[dataframe['run'] == key, constant] = float(value[0])
+#     dataframe[constant] = param_dict[1][1]
+#     print(dataframe.head())
+#
 
 def build_df(clean_df, paramfile, constant, dict_index, constant_index):
     # aggregate, parse paramfile and map, make final agg df w/std
@@ -89,16 +111,16 @@ def build_df(clean_df, paramfile, constant, dict_index, constant_index):
     n_ticks_df = clean_df.groupby(['run'], as_index=False)
     n_ticks_df = n_ticks_df.agg({'total_ixodes': 'nunique', 'tick': 'max'})
 
-    # TODO test outliers conditional
     if args.outliers:
-        n_ticks_df = n_ticks_df[n_ticks_df['tick'] > 90]
+        n_ticks_df = n_ticks_df[n_ticks_df['tick'] > 89]
 
     # get the parameter mappings and add to df
     for key, value in param_dict.items():
-        n_ticks_df.loc[n_ticks_df['run'] == key, 'host_density'] = float(value[0])
+        n_ticks_df.loc[n_ticks_df['run'] == key, 'host_density'] = float(value[0]) # FIXME make 'host_density' an arg
 
     final_df = n_ticks_df.groupby('host_density')['total_ixodes'].agg({'mean', 'std'})
-    final_df[constant] = param_dict[1][1]  # add constant param so we can later groupby and plot multiple curves
+    # add constant param so we can later groupby and plot multiple curves
+    final_df[constant] = param_dict[1][1] # FIXME ? only adds habitat_suitability we may need different val depending on plot
     after = datetime.now()
     print("Build df runtime: ", after - before)
     return final_df
@@ -114,21 +136,27 @@ def write_df(final_df):
         writemode = 'a'
         header = False
 
-    # TODO get current dir, change filename
-    final_df.to_csv('/home/hdenny2/plotting-code/data/host/final/host-aggregated_data', mode=writemode, header=header)
+    # TODO add filename as arg eg filename=plot_type+datetime (conditional for hist?)
+    final_df.to_csv('/home/hdenny2/plotting-code/data/host/final/host-aggregated_data_sans_outliers', mode=writemode, header=header)
 
 
 def main():
     # Specify hard-coded files for testing here
-    paramfile = "/home/hdenny2/plotting-code/data/host/final/host-params_hab01"
-    csvfile = "/home/hdenny2/plotting-code/data/host/final/host-density.2020.Sep.07hab01"
+    # paramfile = "/home/hdenny2/plotting-code/data/host/final/host-params_hab09"
+    # csvfile = "/home/hdenny2/plotting-code/data/host/final/host-density.2020.Sep.07hab09"
+    #
+    # dict_index, constant_index, plot_type, constant_str = get_args()
+    #
+    # raw_df = get_datafile(csvfile)
+    # clean_df = clean_data(raw_df)
+    # final_df = build_df(clean_df, paramfile, constant_str, dict_index, constant_index)
+    # write_df(final_df)
 
+    paramfile = "/media/hill/DATA-LINUX/abm-data/host-density-olderruns/new-model/aggregate-runs/params_05habitat"
+    csvfile = ''
     dict_index, constant_index, plot_type, constant_str = get_args()
+    get_params(paramfile, dict_index, constant_index)
 
-    raw_df = get_datafile(csvfile)
-    clean_df = clean_data(raw_df)
-    final_df = build_df(clean_df, paramfile, constant_str, dict_index, constant_index)
-    write_df(final_df)
 
 
 if __name__ == "__main__":
