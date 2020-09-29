@@ -11,7 +11,8 @@ parser = argparse.ArgumentParser()
 # outliers argument, could give it a list of options so user can pass the threshold
 parser.add_argument('-outliers', action='store_true', help="Remove outliers (runs that didn't make it past 90 days)")
 parser.add_argument('-type', choices=['habitat', 'host'], required=True)
-parser.add_argument('-first', action='store_true')
+parser.add_argument('-first', action='store_true', help="This flag causes writemode to me write ('w'),"
+                                                        "otherwise we write in append mode ('a')")
 parser.add_argument('-skip', type=int, action='store', help="First n lines to skip in file sink")
 args = parser.parse_args()
 
@@ -82,7 +83,7 @@ def clean_data(raw_df):
 
 # NEW CODE --
 # TODO rename functions and vars
-def group_df(clean_df):
+def agg_ixodes_and_days(clean_df):
     agg_df = clean_df.groupby(['run'], as_index=False)
     agg_df = agg_df.agg({'total_ixodes': 'nunique', 'tick': 'max'})
     return agg_df
@@ -90,54 +91,79 @@ def group_df(clean_df):
 
 def filter_outliers(agg_df):
     # If we are handling outliers, we need two separate data frames
-    agg_df = agg_df[agg_df['tick'] > 89]
+    lineplot_df = agg_df[agg_df['tick'] > 89]
     histogram_df = agg_df[agg_df['tick'] < 91]
-    return agg_df, histogram_df
+    return lineplot_df, histogram_df
 
 
 # Pass the filtered/cleaned df
-# Can we pass a list of dfs so we don't need to call this twice when we're doing outliters?
-def map_params(dataframe, paramfile, dict_index, constant_index, constant, plot_type):
+def map_params(df, paramfile, dict_index, constant_index, constant, plot_type):
+    dataframe = df  # TESTME trying to fix setwithcopy warning
     param_dict = get_params(paramfile, dict_index, constant_index)
     # get the parameter mappings and add to df
     for key, value in param_dict.items():
         dataframe.loc[dataframe['run'] == key, plot_type] = float(value[0])
-    dataframe[constant] = param_dict[1][1]
+    dataframe[constant] = param_dict[1][1]  # FIXME gives setwithcopy warning when calling this function multiple times
     print(dataframe.head())
+    return dataframe
 
+# FIXME calling this in this way *after* we map params 'deletes' other params
+def get_std(dataframe):
+    lineplot_df = dataframe.groupby('host_density')['total_ixodes'].agg({'mean', 'std'})
+    print(lineplot_df.head())
+    return lineplot_df
 
-# def build_lineplot_df(agg_df, paramfile, constant, dict_index, constant_index):
+# stopped here
+# def build_df(df, paramfile, dict_index, constant_index, constant, plot_type):
+#     param_dict = get_params(paramfile, dict_index, constant_index)
+#     dataframe = df
+#     for key, value in param_dict.items():
+#         dataframe.loc[dataframe['run'] == key, plot_type] = float(value[0])
+#
+#     if not args.outliers:
+#         lineplot_df = dataframe.groupby('host_density')['total_ixodes'].agg({'mean', 'std'})
+#         lineplot_df[constant] = param_dict[1][1]
+#     else:
+#         lineplot_df, histogram_df = filter_outliers(df)
 #
 #
-#
-#
 
 
-def write_df(final_df):
+
+
+# TODO pass path as arg, make one for server one for local?
+def write_df(final_df, filename):
     if args.first:
         writemode = 'w'
         header = True
     else:
         writemode = 'a'
         header = False
-    final_df.to_csv('/media/hill/DATA-LINUX/abm-data/host-density-olderruns/new-model/aggregate-runs/test_hist_df')
+
+    final_df.to_csv('/media/hill/DATA-LINUX/abm-data/host-density-olderruns/new-model/aggregate-runs/'+filename,
+                    mode=writemode, header=header)
 
 
 def main():
     paramfile = '/media/hill/DATA-LINUX/abm-data/host-density-olderruns/new-model/aggregate-runs/params_05habitat'
     csvfile = '/media/hill/DATA-LINUX/abm-data/host-density-olderruns/new-model/aggregate-runs/density-new.2020.Jul.11_hab05'
     dict_index, constant_index, plot_type, constant_str = get_args()
-    # get_params(paramfile, dict_index, constant_index)
 
     raw_df = get_datafile(csvfile)
     clean_df = clean_data(raw_df)
-    df = group_df(clean_df)
+    df = agg_ixodes_and_days(clean_df)
 
+    # TODO change args/functions so we don't have to call these twice
     if args.outliers:
         agg_df, histogram_df = filter_outliers(df)
-        map_params(agg_df, paramfile, dict_index, constant_index, plot_type, constant_str)
+        lineplot_df = map_params(agg_df, paramfile, dict_index, constant_index, plot_type, constant_str)
+        histogram_df = map_params(histogram_df, paramfile, dict_index, constant_index, plot_type, constant_str)
+        write_df(lineplot_df, 'agg-lineplot-df')
+        write_df(histogram_df, 'outlier-hist-df')
     else:
-        map_params(df, paramfile, dict_index, constant_index, plot_type, constant_str)
+        lineplot_df = map_params(df, paramfile, dict_index, constant_index, plot_type, constant_str)
+        final_df = get_std(lineplot_df)
+        write_df(final_df, 'agg-lineplot-df')
 
 
 if __name__ == "__main__":
