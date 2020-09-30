@@ -5,6 +5,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 from datetime import datetime
 
+# This code is intended to handle plotting a dataframe output by clean_data.py
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-type', choices=['habitat', 'host'], required=True)
 # parser.add_argument('-first', action='store_true')

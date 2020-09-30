@@ -2,6 +2,9 @@ import pandas as pd
 import argparse
 from datetime import datetime
 
+# 9/30/2020
+# This file parses a batch run for 'outlier' runs (currently defined as runs < 91 days),
+# logs associated parameters, aggs for additinal variables and writes these to a csv
 
 parser = argparse.ArgumentParser()
 # parser.add_argument('-test', action='store_true')
@@ -99,8 +102,8 @@ def map_params(df, paramfile, dict_index, constant_index, constant, plot_type):
     # get the parameter mappings and add to df
     for key, value in param_dict.items():
         dataframe.loc[dataframe['run'] == key, plot_type] = float(value[0])
-    dataframe[constant] = param_dict[1][1]  # FIXME gives setwithcopy warning when calling this function multiple times
-    print(dataframe.head())
+    dataframe[constant] = param_dict[1][1]  # FIXME gives setwithcopy warning
+    print(dataframe.head(200))
     return dataframe
 
 
@@ -112,13 +115,15 @@ def write_df(final_df, filename):
         writemode = 'a'
         header = False
 
-    final_df.to_csv('/media/hill/DATA-LINUX/abm-data/host-density-olderruns/new-model/aggregate-runs/'+filename,
-                    mode=writemode, header=header)
+    serverpath = '/home/hdenny2/plotting-code/data/host/final/'
+    localpath = '/media/hill/DATA-LINUX/abm-data/'
+
+    final_df.to_csv(serverpath+filename, mode=writemode, header=header)
 
 
 def main():
-    paramfile = '/media/hill/DATA-LINUX/abm-data/host-density-olderruns/new-model/aggregate-runs/params_05habitat'
-    csvfile = '/media/hill/DATA-LINUX/abm-data/host-density-olderruns/new-model/aggregate-runs/density-new.2020.Jul.11_hab05'
+    paramfile = '/home/hdenny2/plotting-code/data/host/final/host-params_hab09'
+    csvfile = '/home/hdenny2/plotting-code/data/host/final/host-density.2020.Sep.07hab09'
     dict_index, constant_index, plot_type, constant_str = get_args()
 
     raw_df = get_datafile(csvfile)
