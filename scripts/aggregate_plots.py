@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 import argparse
 from datetime import datetime
 
-
-# This script is intended to create a plot for habitat suitability & Total Ixodes to visualize the impact of
-# habitat suitability on Ixodes survival rates.
+# Hillari Denny
+# Last update: 9/30/2020
+# This code is a deprecated version of clean_data.py and plot_data.py
 #
 # Usage: python3 ./aggregate_plots.py <paramfile> <csvfile> -plot <plot type> [-popup] [-root <directory>]
 #
@@ -15,7 +15,7 @@ from datetime import datetime
 # is ommitted, the plot is saved to a hard-coded location
 #
 
-# TODO: confidence intervals, organize/breakup functions, cleanup comments, update usage, argparse verbose
+# TODO: cleanup, archive
 
 # --- Argparse ---
 

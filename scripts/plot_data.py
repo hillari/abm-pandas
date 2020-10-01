@@ -5,17 +5,20 @@ import matplotlib
 import matplotlib.pyplot as plt
 from datetime import datetime
 
-# This code is intended to handle plotting a dataframe output by clean_data.py
+# Hillari Denny
+# Last update: 9/30/2020
+# This builds a lineplot to visualize the results of a param sweep to identify param impact on tick establishment
+# Input is the dataframe output by clean_data.py
+
+# TODO
+# - reorganize plot(). Do write
+# - make groupby a function argument
+# - Add path/filename arg
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-type', choices=['habitat', 'host'], required=True)
 # parser.add_argument('-first', action='store_true')
 args = parser.parse_args()
-
-# TODO
-# - organize functionality
-# - make groupby an arg
-# - add code to do histograms for outlier runs
 
 
 def get_args():
