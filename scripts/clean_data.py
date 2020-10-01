@@ -8,9 +8,6 @@ from datetime import datetime
 import numpy as np
 import argparse
 
-
-
-
 # TODO
 # - Verbosity flag + conditional prints
 # - Logging for outliers (this is currently a separate python file)
@@ -61,13 +58,13 @@ def get_params(paramfile, dict_index, constant_index):
     return param_dict
 
 
-def get_datafile(csvfile):
+def get_datafile(csvfile, nlines):
     # read the csv, return resulting df
     colnames = ['run', 'tick', 'lifestate', 'total_ixodes']
-    if args.skip:
-        nlines = args.skip
-    else:
-        nlines = 1
+    # if args.skip:
+    #     nlines = args.skip
+    # else:
+    #     nlines = 1
     print("Reading csv file...")
     print("Skipping {} lines".format(nlines))
     before = datetime.now()
@@ -129,40 +126,64 @@ def build_df(clean_df, paramfile, dict_index, constant_index, plot_type, constan
 def write_df(final_df):
     # writes or appends df to file
     # no return val
-    if args.first:
-        writemode = 'w'
-        header = True
-    else:
-        writemode = 'a'
-        header = False
+    # if args.first:
+    #     writemode = 'w'
+    #     header = True
+    # else:
+    #     writemode = 'a'
+    #     header = False
+    writemode = 'a'
+    header = False
 
     # TODO add filename as arg eg filename=plot_type+datetime
-    final_df.to_csv('/home/hdenny2/plotting-code/data/habitat/final/hab-aggregated-allskiplines', mode=writemode, header=header)
+    final_df.to_csv('/home/hdenny2/plotting-code/data/habitat/final/hab-aggregated-allskiplines', mode=writemode,
+                    header=header)
 
 
 def main():
-    # Specify hard-coded files for testing here
-    paramfile = "/home/hdenny2/plotting-code/data/habitat/final/habitat-params_host1"
-    csvfile = "/home/hdenny2/plotting-code/data/habitat/final/habitat-suitability.2020.Sep.08host1"
-
+    # Currently working method ------
+    # paramfile = "/home/hdenny2/plotting-code/data/habitat/final/habitat-params_host1"
+    # csvfile = "/home/hdenny2/plotting-code/data/habitat/final/habitat-suitability.2020.Sep.08host1"
+    #
     dict_index, constant_index, plot_type, constant_str = get_args()
+    #
+    # raw_df = get_datafile(csvfile)
+    # clean_df = clean_data(raw_df)
+    # final_df = build_df(clean_df, paramfile, dict_index, constant_index, plot_type, constant_str)
+    # ------
 
-    raw_df = get_datafile(csvfile)
-    clean_df = clean_data(raw_df)
-    final_df = build_df(clean_df, paramfile, dict_index, constant_index, plot_type, constant_str)
-    # # TEST THIS CONDITIONAL
+    # TEST THIS CONDITIONAL
     # if args.skip and args.skip > 1:
     #     clean_df = clean_data(raw_df)
     #     final_df = build_df(clean_df, paramfile, dict_index, constant_index, plot_type, constant_str)
     # else:
     #     final_df = build_df(raw_df, paramfile, dict_index, constant_index, plot_type, constant_str)
+    # write_df(final_df)
+    # # ------
 
-    write_df(final_df)
+    # {paramfile: (csvfile, skiplines }
+    host_filedict = {'habitat-params_host1': ('habitat-suitability.2020.Sep.08host1', 1),
+                     'habitat-params_host3': ('habitat-suitability.2020.Sep.08host3', 13),
+                     'habitat-params_host5': ('habitat-suitability.2020.Sep.08host5', 1),
+                     'habitat-params_host7': ('habitat-suitability.2020.Sep.08host7', 1),
+                     'habitat-params_host9': ('habitat-suitability.2020.Sep.15host9', 1)
+                     }
+
+    habitat_filedict = {'host-params_hab01': ('host-density.2020.Sep.07hab01', 1),
+                        'host-params_hab03': ('host-density.2020.Sep.07hab03', 13),
+                        'host-params_hab05': ('host-density.2020.Sep.07hab05', 1),
+                        'host-params_hab07': ('host-density.2020.Sep.15hab07', 13),
+                        'host-params_hab09': ('host-density.2020.Sep.07hab09', 1)
+                        }
+
+    for param, csv in habitat_filedict.items():
+        abs_csv_path = "/home/hdenny2/plotting-code/data/habitat/final/" + csv[0]
+        abs_param_path = "/home/hdenny2/plotting-code/data/habitat/final/" + param
+        raw_df = get_datafile(abs_csv_path, csv[1])
+        clean_df = clean_data(raw_df)
+        final_df = build_df(clean_df, abs_param_path, dict_index, constant_index, plot_type, constant_str)
+        write_df(final_df)
 
 
 if __name__ == "__main__":
     main()
-
-
-
-

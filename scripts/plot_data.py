@@ -23,32 +23,34 @@ args = parser.parse_args()
 
 def get_args():
     if args.type == 'habitat':
+        plot_type = 'habitat_suitability'
         x_label = 'Habitat Suitability'
         plot_title = 'Aggregated Habitat Suitability'
         plot_legend = 'Host Density: '
     else:
+        plot_type = 'host_density'
         x_label = 'Host Density'
         plot_title = 'Aggregated Host Density'
         plot_legend = 'Habitat Suitability: '
 
-    return x_label, plot_title, plot_legend
+    return plot_type, x_label, plot_title, plot_legend
 
 
-# TODO plot error bars/ CI
-def plot(csvfile, legend, xlabel, title):
-    df = pd.read_csv(csvfile)
+# TODO make groupby an arg (update get_args() )
+def plot(plottype, csv, legend, xlabel, title):
+    df = pd.read_csv(csv)
     fig, ax = plt.subplots()
     plt.ylabel("Cumulative Ixodes")
     plt.xlabel(xlabel)
     plt.title(title)
-    for label, data in df.groupby('habitat_suitability'):
+    for label, data in df.groupby('host_density'):
         # plt.errorbar(data['host_density'], data['mean'], yerr=1.96*data['std'])
-        data.plot('host_density', 'mean', ax=ax, label=label, marker='o', markersize=3)
+        data.plot(plottype, 'mean', ax=ax, label=label, marker='o', markersize=3)
     plt.legend(title=legend)
     server_path = ""
     # plt.savefig("../data/host/aggplottest.png")
     plt.show()
 
-csvfile = "../data/host/host_agg_df"
-x_label, plot_title, plot_legend = get_args()
-plot(csvfile, plot_legend, x_label, plot_title)
+csvfile = "../data/habitat-suitability/hab-agg-df-directoryloopversion"
+plot_type, x_label, plot_title, plot_legend = get_args()
+plot(plot_type, csvfile, plot_legend, x_label, plot_title)
