@@ -1,6 +1,3 @@
-# Hillari M Denny
-# 9/23/2020
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import csv
@@ -8,9 +5,13 @@ from datetime import datetime
 import numpy as np
 import argparse
 
+# Hillari M Denny
+# Last update: 10/02/2020
+# This file processes Repast file sinks and outputs a dataframe with aggregated results
+
 # TODO
 # - Verbosity flag + conditional prints
-# - Logging for outliers (this is currently a separate python file)
+# - Add logging for outliers (this is currently a separate python file)
 
 
 parser = argparse.ArgumentParser()
@@ -18,7 +19,6 @@ parser = argparse.ArgumentParser()
 # parser.add_argument('paramfile')
 # parser.add_argument('csvfile')
 
-# outliers argument, could give it a list of options so user can pass the threshold
 parser.add_argument('-outliers', action='store_true', help="Remove outliers (runs that didn't make it past 90 days)")
 parser.add_argument('-type', choices=['habitat', 'host'], required=True)
 parser.add_argument('-first', action='store_true', help="This flag triggers writemode to be ('w'),"
@@ -49,10 +49,12 @@ def get_params(paramfile, dict_index, constant_index):
         for line in file:
             result = line.replace("\t", ",").replace('\n', '').split(',')
             try:
-                # { run#: host_density/habitat_suitability }
+                # { run#: host_density/habitat_suitability, host_density/habitat_suitability }
+                # { run#: plot_type, constant param }
                 param_dict[int(result[0])].append(float(result[dict_index]), float(result[constant_index]))
             except KeyError:
                 param_dict[int(result[0])] = (float(result[dict_index]), float(result[constant_index]))
+    # print("Initial paramdict:")
     # for k, v in param_dict.items():
     #     print(k, v)
     return param_dict
@@ -68,17 +70,17 @@ def get_datafile(csvfile, nlines):
     print("Reading csv file...")
     print("Skipping {} lines".format(nlines))
     before = datetime.now()
-    df = pd.read_csv(csvfile, skiprows=nlines, names=colnames, error_bad_lines=False)
+    df = pd.read_csv(csvfile, skiprows=nlines, names=colnames, error_bad_lines=False, warn_bad_lines=True)
     after = datetime.now()
     print("read_csv() runtime: ", after - before)
-    print(df.head())
+    # print(df.head())
     return df
 
 
 def clean_data(raw_df):
     # filter bad lines
     # returns df
-    df = raw_df  # ...Because if we have arg = df and return = df...? check this
+    df = raw_df
     print("Filtering database...")
     before = datetime.now()
     # print("Max before filtering...", df['tick'].max())
@@ -89,19 +91,8 @@ def clean_data(raw_df):
     return df
 
 
-# # Pass the filtered/cleaned df
-# # Works in log_outliers.py, incorporate here
-# def map_params(dataframe, paramfile, dict_index, constant_index, constant):
-#     param_dict = get_params(paramfile, dict_index, constant_index)
-#     # get the parameter mappings and add to df
-#     for key, value in param_dict.items():
-#         dataframe.loc[dataframe['run'] == key, constant] = float(value[0])
-#     dataframe[constant] = param_dict[1][1]
-#     print(dataframe.head())
-#
-
 def build_df(clean_df, paramfile, dict_index, constant_index, plot_type, constant):
-    # aggregate, parse paramfile and map, make final agg df w/std
+    # aggregate, parse paramfile and map, make final agg df w/std and mean of total ixodes
     param_dict = get_params(paramfile, dict_index, constant_index)
     print("Building df...")
     before = datetime.now()
@@ -115,7 +106,7 @@ def build_df(clean_df, paramfile, dict_index, constant_index, plot_type, constan
     for key, value in param_dict.items():
         n_ticks_df.loc[n_ticks_df['run'] == key, plot_type] = float(value[0])
 
-    final_df = n_ticks_df.groupby(plot_type)['total_ixodes'].agg({'mean', 'std'})
+    final_df = n_ticks_df.groupby(plot_type)['total_ixodes'].agg({'mean', 'std'}) # FIXME to_csv swaps these but only sometimes?!
     # add constant param so we can later groupby and plot multiple curves
     final_df[constant] = param_dict[1][1]
     after = datetime.now()
@@ -126,33 +117,34 @@ def build_df(clean_df, paramfile, dict_index, constant_index, plot_type, constan
 def write_df(final_df):
     # writes or appends df to file
     # no return val
-    # if args.first:
-    #     writemode = 'w'
-    #     header = True
-    # else:
-    #     writemode = 'a'
-    #     header = False
-    writemode = 'a'
-    header = False
+    if args.first:
+        writemode = 'w'
+        header = True
+    else:
+        writemode = 'a'
+        header = False
+    # writemode = 'a'
+    # header = False
 
     # TODO add filename as arg eg filename=plot_type+datetime
-    final_df.to_csv('/home/hdenny2/plotting-code/data/habitat/final/hab-aggregated-allskiplines', mode=writemode,
+    final_df.to_csv('/home/hdenny2/plotting-code/data/host/final/agg-host-df', mode=writemode,
                     header=header)
 
 
 def main():
-    # Currently working method ------
-    # paramfile = "/home/hdenny2/plotting-code/data/habitat/final/habitat-params_host1"
-    # csvfile = "/home/hdenny2/plotting-code/data/habitat/final/habitat-suitability.2020.Sep.08host1"
-    #
     dict_index, constant_index, plot_type, constant_str = get_args()
+
+    # # ------ Method to process one file sink at a time ------
+    # paramfile = "/home/hdenny2/plotting-code/data/habitat/final/habitat-params_host3"
+    # csvfile = "/home/hdenny2/plotting-code/data/habitat/final/habitat-suitability.2020.Sep.08host3"
     #
     # raw_df = get_datafile(csvfile)
     # clean_df = clean_data(raw_df)
     # final_df = build_df(clean_df, paramfile, dict_index, constant_index, plot_type, constant_str)
-    # ------
+    # write_df(final_df)
+    # # ------
 
-    # TEST THIS CONDITIONAL
+    # Another method of getting results with a conditional on file sink format (Archive this)
     # if args.skip and args.skip > 1:
     #     clean_df = clean_data(raw_df)
     #     final_df = build_df(clean_df, paramfile, dict_index, constant_index, plot_type, constant_str)
@@ -161,28 +153,30 @@ def main():
     # write_df(final_df)
     # # ------
 
+# ---- Method to process a group of file sinks in one run ---
     # {paramfile: (csvfile, skiplines }
-    host_filedict = {'habitat-params_host1': ('habitat-suitability.2020.Sep.08host1', 1),
-                     'habitat-params_host3': ('habitat-suitability.2020.Sep.08host3', 13),
-                     'habitat-params_host5': ('habitat-suitability.2020.Sep.08host5', 1),
-                     'habitat-params_host7': ('habitat-suitability.2020.Sep.08host7', 1),
-                     'habitat-params_host9': ('habitat-suitability.2020.Sep.15host9', 1)
-                     }
-
-    habitat_filedict = {'host-params_hab01': ('host-density.2020.Sep.07hab01', 1),
-                        'host-params_hab03': ('host-density.2020.Sep.07hab03', 13),
-                        'host-params_hab05': ('host-density.2020.Sep.07hab05', 1),
-                        'host-params_hab07': ('host-density.2020.Sep.15hab07', 13),
-                        'host-params_hab09': ('host-density.2020.Sep.07hab09', 1)
+    habitat_filedict = {'habitat-params_host1': ('habitat-suitability.2020.Sep.08host1', 1),
+                        'habitat-params_host3': ('habitat-suitability.2020.Sep.08host3', 13),
+                        'habitat-params_host5': ('habitat-suitability.2020.Sep.08host5', 1),
+                        'habitat-params_host7': ('habitat-suitability.2020.Sep.08host7', 1),
+                        'habitat-params_host9': ('habitat-suitability.2020.Sep.15host9', 1)
                         }
 
-    for param, csv in habitat_filedict.items():
-        abs_csv_path = "/home/hdenny2/plotting-code/data/habitat/final/" + csv[0]
+    host_filedict = {'host-params_hab01': ('host-density.2020.Sep.07hab01', 1),
+                     'host-params_hab03': ('host-density.2020.Sep.07hab03', 13),
+                     'host-params_hab05': ('host-density.2020.Sep.07hab05', 1),
+                     'host-params_hab07': ('host-density.2020.Sep.15hab07', 13),
+                     'host-params_hab09': ('host-density.2020.Sep.07hab09', 1)
+                     }
+
+    for param, file_sink in habitat_filedict.items():
+        abs_csv_path = "/home/hdenny2/plotting-code/data/habitat/final/" + file_sink[0]
         abs_param_path = "/home/hdenny2/plotting-code/data/habitat/final/" + param
-        raw_df = get_datafile(abs_csv_path, csv[1])
+        raw_df = get_datafile(abs_csv_path, file_sink[1])
         clean_df = clean_data(raw_df)
         final_df = build_df(clean_df, abs_param_path, dict_index, constant_index, plot_type, constant_str)
         write_df(final_df)
+# -------
 
 
 if __name__ == "__main__":

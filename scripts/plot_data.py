@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 
 # Hillari Denny
-# Last update: 9/30/2020
+# Last update: 10/02/2020
 # This builds a lineplot to visualize the results of a param sweep to identify param impact on tick establishment
 # Input is the dataframe output by clean_data.py
 
@@ -43,7 +43,7 @@ def plot(plottype, csv, legend, xlabel, title):
     plt.ylabel("Cumulative Ixodes")
     plt.xlabel(xlabel)
     plt.title(title)
-    for label, data in df.groupby('host_density'):
+    for label, data in df.groupby('habitat_suitability'):
         # plt.errorbar(data['host_density'], data['mean'], yerr=1.96*data['std'])
         data.plot(plottype, 'mean', ax=ax, label=label, marker='o', markersize=3)
     plt.legend(title=legend)
@@ -51,6 +51,7 @@ def plot(plottype, csv, legend, xlabel, title):
     # plt.savefig("../data/host/aggplottest.png")
     plt.show()
 
-csvfile = "../data/habitat-suitability/hab-agg-df-directoryloopversion"
+
+csvfile = "../data/host/host_agg_df"
 plot_type, x_label, plot_title, plot_legend = get_args()
 plot(plot_type, csvfile, plot_legend, x_label, plot_title)
