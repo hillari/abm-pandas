@@ -47,7 +47,6 @@ def plot(plottype, csv, legend, xlabel, title):
         # plt.errorbar(data['host_density'], data['mean'], yerr=1.96*data['std'])
         data.plot(plottype, 'mean', ax=ax, label=label, marker='o', markersize=3)
     plt.legend(title=legend)
-    server_path = ""
     # plt.savefig("../data/host/aggplottest.png")
     plt.show()
 

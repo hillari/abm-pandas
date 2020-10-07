@@ -3,14 +3,15 @@ import argparse
 from datetime import datetime
 
 # 9/30/2020
+# Updated: 10/6/2020
+# Needs testing, but I added the ability to do a lineplot dataframe as well as an outlier or
+# 'histogram' dataframe. Will eventually combine clean_data.py and this file
+
 # This file parses a batch run for 'outlier' runs (currently defined as runs < 91 days),
-# logs associated parameters, aggs for additinal variables and writes these to a csv
+# logs associated parameters, aggregates for additional variables and writes these to a csv
 
 parser = argparse.ArgumentParser()
-# parser.add_argument('-test', action='store_true')
-# parser.add_argument('paramfile')
-# parser.add_argument('csvfile')
-
+parser.add_argument('-outliers', action='store_true', help="Remove outliers (runs that didn't make it past 90 days)")
 parser.add_argument('-type', choices=['habitat', 'host'], required=True)
 parser.add_argument('-first', action='store_true', help="This flag causes writemode to me write ('w'),"
                                                         "otherwise we write in append mode ('a')")
@@ -69,9 +70,8 @@ def get_datafile(csvfile):
 
 
 def clean_data(raw_df):
-    # filter bad lines
-    # returns df
-    df = raw_df  # ...Because if we have arg = df and return = df...? check this
+    # Repast sometimes inserts additional param lines, so we need to remove these
+    df = raw_df  # Check if we can remove this reassignment
     print("Filtering database...")
     before = datetime.now()
     # print("Max before filtering...", df['tick'].max())
@@ -82,8 +82,6 @@ def clean_data(raw_df):
     return df
 
 
-# NEW CODE --
-# TODO rename functions and vars
 def agg_ixodes_and_days(clean_df):
     agg_df = clean_df.groupby(['run'], as_index=False)
     agg_df = agg_df.agg({'total_ixodes': 'nunique', 'tick': 'max'})
@@ -92,29 +90,38 @@ def agg_ixodes_and_days(clean_df):
 
 def filter_outliers(agg_df):
     histogram_df = agg_df[agg_df['tick'] < 91]
-    return histogram_df
+    lineplot_df = agg_df[agg_df['tick'] > 90]
+    return histogram_df, lineplot_df
 
 
 # Pass the filtered/cleaned df
-def map_params(df, paramfile, dict_index, constant_index, constant, plot_type):
-    dataframe = df  # TESTME trying to fix setwithcopy warning
+def map_params(df, paramfile, dict_index, constant_index, plot_type):
+    dataframe = df  # Check if we can remove this
     param_dict = get_params(paramfile, dict_index, constant_index)
     # get the parameter mappings and add to df
     for key, value in param_dict.items():
         dataframe.loc[dataframe['run'] == key, plot_type] = float(value[0])
-    dataframe[constant] = param_dict[1][1]  # FIXME gives setwithcopy warning
-    print(dataframe.head(200))
-    return dataframe
+    constant_value = param_dict[1][1]
+    # print(dataframe.head(20))
+    return dataframe, constant_value
 
 
-def write_df(final_df, filename):
+def get_mean_std(dataframe, plot_type):
+    final_df = dataframe.groupby(plot_type)['total_ixodes'].agg(Mean='mean', Std='std')
+    print(final_df.head())
+    return final_df
+
+
+def write_df(final_df, filename, constant_param, constant_value):
     if args.first:
         writemode = 'w'
         header = True
     else:
         writemode = 'a'
         header = False
-
+    final_df[constant_param] = constant_value  # We want to add the 'constant' param, easiest to do here for now
+    print("Final Dataframe:")
+    print(final_df.head())
     serverpath = '/home/hdenny2/plotting-code/data/host/final/'
     localpath = '/media/hill/DATA-LINUX/abm-data/'
 
@@ -126,14 +133,28 @@ def main():
     csvfile = '/home/hdenny2/plotting-code/data/host/final/host-density.2020.Sep.07hab09'
     dict_index, constant_index, plot_type, constant_str = get_args()
 
+    # These three steps are done regardless of whether or not we deal with outliers
     raw_df = get_datafile(csvfile)
     clean_df = clean_data(raw_df)
     agg_df = agg_ixodes_and_days(clean_df)
-    df = filter_outliers(agg_df)
+    filename_outliers = plot_type + "_outlier-df"
+    filename_lineplot = plot_type + "_agg-df"
 
-    final_df = map_params(df, paramfile, dict_index, constant_index, constant_str, plot_type)
-    filename = plot_type+"_outlier-df"
-    write_df(final_df, filename)
+    # If we want to do outliers, we create an additional dataframe to store that info
+    if args.outliers:
+        outliers_df, lineplot_df = filter_outliers(agg_df)
+        outliers_final_df, constant_value = map_params(outliers_df, paramfile, dict_index, constant_index, plot_type)
+        mapped_lineplot_df, constant_value = map_params(lineplot_df, paramfile, dict_index, constant_index, plot_type)
+        lineplot_final_df = get_mean_std(mapped_lineplot_df, plot_type)
+
+        write_df(outliers_final_df, filename_outliers, constant_value, constant_str)
+        write_df(lineplot_final_df, filename_lineplot, constant_value, constant_str)
+
+    # Otherwise, we can just do the lineplot
+    else:
+        mapped_lineplot_df, constant_value = map_params(agg_df, paramfile, dict_index, constant_index, plot_type)
+        lineplot_final_df = get_mean_std(mapped_lineplot_df, plot_type)
+        write_df(lineplot_final_df, filename_lineplot, constant_value, constant_str)
 
 
 if __name__ == "__main__":

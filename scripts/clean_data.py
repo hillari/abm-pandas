@@ -16,9 +16,6 @@ import argparse
 
 parser = argparse.ArgumentParser()
 # parser.add_argument('-test', action='store_true')
-# parser.add_argument('paramfile')
-# parser.add_argument('csvfile')
-
 parser.add_argument('-outliers', action='store_true', help="Remove outliers (runs that didn't make it past 90 days)")
 parser.add_argument('-type', choices=['habitat', 'host'], required=True)
 parser.add_argument('-first', action='store_true', help="This flag triggers writemode to be ('w'),"
@@ -123,10 +120,6 @@ def write_df(final_df):
     else:
         writemode = 'a'
         header = False
-    # writemode = 'a'
-    # header = False
-
-    # TODO add filename as arg eg filename=plot_type+datetime
     final_df.to_csv('/home/hdenny2/plotting-code/data/host/final/agg-host-df', mode=writemode,
                     header=header)
 
